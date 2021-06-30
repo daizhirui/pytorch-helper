@@ -2,8 +2,6 @@
 requires = [
     "numpy",
     "torch>=1.7.0",
-    "torchvision",
-    "cudatoolkit",
     "pillow",
     "opencv-python"
 ]
