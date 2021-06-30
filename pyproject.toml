@@ -1,7 +1,7 @@
 [build-system]
 requires = [
     "numpy",
-    "pytorch>=1.7.0",
+    "torch>=1.7.0",
     "torchvision",
     "cudatoolkit",
     "pillow",
