@@ -1,0 +1,10 @@
+[build-system]
+requires = [
+    "numpy",
+    "pytorch>=1.7.0",
+    "torchvision",
+    "cudatoolkit",
+    "pillow",
+    "opencv-python"
+]
+build-backend = "setuptools.build_meta"
