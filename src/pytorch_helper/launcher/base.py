@@ -8,6 +8,7 @@ from pytorch_helper.settings.options.task import TaskOption
 from pytorch_helper.utils.dist import is_distributed
 from pytorch_helper.utils.dist import is_rank0
 from pytorch_helper.utils.io import load_yaml
+from pytorch_helper.utils.log import info
 from .parse import MainArg
 
 
@@ -59,6 +60,7 @@ def run_task(
         raise e
     finally:
         if is_rank0() and task.option.train:
+            info(__name__, 'backup the task')
             task.backup(immediate=True, resumbale=True)
         if is_distributed():
             from torch.distributed import destroy_process_group
