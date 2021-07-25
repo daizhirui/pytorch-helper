@@ -17,9 +17,9 @@ __all__ = ['TestTask']
 
 class TestTask(TrainTask, ABC):
 
-    def __init__(self, task_option, gpu_ids):
+    def __init__(self, task_option):
         self.output_path_test = None
-        super(TestTask, self).__init__(task_option, gpu_ids)
+        super(TestTask, self).__init__(task_option)
 
         self.keep_model_output = True
         self.cur_stage = self.STAGE_TEST

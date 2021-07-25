@@ -17,7 +17,7 @@ __all__ = ['TrainTask']
 
 class TrainTask(TaskBase, ABC):
 
-    def __init__(self, task_option, gpu_ids):
+    def __init__(self, task_option):
         self.progress_bars = None
         self.batch_cnt = {
             self.STAGE_TRAIN: 0,
@@ -27,7 +27,7 @@ class TrainTask(TaskBase, ABC):
         }
         self.in_stage_meter_keys = set()
 
-        super(TrainTask, self).__init__(task_option, gpu_ids)
+        super(TrainTask, self).__init__(task_option)
 
         self.optimizer = self.option.optimizer.build(self.unwrapped_model)
         self.lr_scheduler = self.option.lr_scheduler.build(self.optimizer)
