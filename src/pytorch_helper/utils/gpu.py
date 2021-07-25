@@ -7,14 +7,14 @@ processes using the requested gpus.
 import time
 from typing import List
 
-import gpustat
 import torch
-
 from pytorch_helper.utils import log
+
 from .dist import is_distributed
+from .gpustat import GPUStatCollection
 
 
-def collect_gpu(gpu_id: int , mb_size: int = None) -> torch.Tensor:
+def collect_gpu(gpu_id: int, mb_size: int = None) -> torch.Tensor:
     """ collect the memory of a gpu
 
     :param gpu_id: gpu index
@@ -24,7 +24,7 @@ def collect_gpu(gpu_id: int , mb_size: int = None) -> torch.Tensor:
     log.info(__name__, f'Collect gpu {gpu_id}')
     device = torch.device('cuda', gpu_id)
     if mb_size is None:
-        q = gpustat.GPUStatCollection.new_query()[gpu_id]
+        q = GPUStatCollection.new_query()[gpu_id]
         mb_size = q.memory_total
     MB = 2 ** 18
     size = int(0.85 * mb_size * MB)
@@ -49,7 +49,7 @@ def wait_gpus(
     while gpus_not_ready:
         time.sleep(5)
         gpus_not_ready = False
-        queries = gpustat.GPUStatCollection.new_query()
+        queries = GPUStatCollection.new_query()
 
         for i, gpu_id in enumerate(gpus_to_wait):
             q = queries[gpu_id]

@@ -34,7 +34,7 @@ def make_dirs_for_file(path: str):
 
     :param path: str of the file
     """
-    os.makedirs(os.path.basename(path), exist_ok=True)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
 
 
 def save_result(result: Any, path: str):
