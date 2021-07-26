@@ -45,7 +45,6 @@ def wait_gpus(
     :param sync: Bool to synchronize all the processes such that they release
         the gpu memory together
     """
-    distributed = is_distributed()
     gpus.sort()
     gpus_not_ready = True
     blocks = dict()
@@ -54,7 +53,7 @@ def wait_gpus(
         gpus_not_ready = False
         queries = GPUStatCollection.new_query()
 
-        for i, gpu_id in enumerate(gpus):
+        for gpu_id in gpus:
             q = queries[gpu_id]
             if q.processes is not None and len(q.processes) > 0:
                 log.info(
@@ -65,9 +64,7 @@ def wait_gpus(
             else:
                 log.info(__name__, f'GPU {gpu_id} is ready')
                 if collect:
-                    blocks[gpu_id] = collect_gpu(
-                        i if distributed else gpu_id, q.memory_total
-                    )
+                    blocks[gpu_id] = collect_gpu(gpu_id, q.memory_total)
 
     log.info(__name__, f'GPUs {gpus} are ready!')
 
