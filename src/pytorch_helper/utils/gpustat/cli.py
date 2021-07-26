@@ -8,7 +8,7 @@ import time
 
 from blessed import Terminal
 
-from pytorch_helper.utils.gpustat import __version__
+from . import __version__
 from .core import GPUStatCollection
 
 

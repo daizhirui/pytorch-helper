@@ -22,12 +22,33 @@ import time
 from datetime import datetime
 
 import psutil
-import pynvml as N
 from blessed import Terminal
 from six.moves import cStringIO as StringIO
 
+# import .pynvml as N
+from .pynvml import NVMLError
+from .pynvml import NVML_TEMPERATURE_GPU
+from .pynvml import nvmlDeviceGetComputeRunningProcesses
+from .pynvml import nvmlDeviceGetCount
+from .pynvml import nvmlDeviceGetDecoderUtilization
+from .pynvml import nvmlDeviceGetEncoderUtilization
+from .pynvml import nvmlDeviceGetEnforcedPowerLimit
+from .pynvml import nvmlDeviceGetFanSpeed
+from .pynvml import nvmlDeviceGetGraphicsRunningProcesses
+from .pynvml import nvmlDeviceGetHandleByIndex
+from .pynvml import nvmlDeviceGetIndex
+from .pynvml import nvmlDeviceGetMemoryInfo
+from .pynvml import nvmlDeviceGetName
+from .pynvml import nvmlDeviceGetPowerUsage
+from .pynvml import nvmlDeviceGetTemperature
+from .pynvml import nvmlDeviceGetUUID
+from .pynvml import nvmlDeviceGetUtilizationRates
+from .pynvml import nvmlInit
+from .pynvml import nvmlShutdown
+from .pynvml import nvmlSystemGetDriverVersion
 from .util import bytes2human
 from .util import prettify_commandline
+from ..log import warn
 
 NOT_SUPPORTED = 'Not Supported'
 MB = 1024 * 1024
@@ -273,41 +294,41 @@ class GPUStat(object):
 
         reps += " | %(C1)s%(CMemU)s{entry[memory.used]:>5}%(C0)s " \
                 "/ %(CMemT)s{entry[memory.total]:>5}%(C0)s MB"
-        reps = (reps) % colors
+        reps = reps % colors
         reps = reps.format(entry={k: _repr(v) for k, v in self.entry.items()},
                            gpuname_width=gpuname_width)
         reps += " |"
 
-        def process_repr(p):
+        def process_repr(_p):
             r = ''
             if not show_cmd or show_user:
                 r += "{CUser}{}{C0}".format(
-                    _repr(p['username'], '--'), **colors
+                    _repr(_p['username'], '--'), **colors
                 )
             if show_cmd:
                 if r:
                     r += ':'
                 r += "{C1}{}{C0}".format(
-                    _repr(p.get('command', p['pid']), '--'), **colors
+                    _repr(_p.get('command', _p['pid']), '--'), **colors
                 )
 
             if show_pid:
-                r += ("/%s" % _repr(p['pid'], '--'))
+                r += ("/%s" % _repr(_p['pid'], '--'))
             r += '({CMemP}{}M{C0})'.format(
-                _repr(p['gpu_memory_usage'], '?'), **colors
+                _repr(_p['gpu_memory_usage'], '?'), **colors
             )
             return r
 
-        def full_process_info(p):
+        def full_process_info(_p):
             r = "{C0} ├─ {:>6} ".format(
-                _repr(p['pid'], '--'), **colors
+                _repr(_p['pid'], '--'), **colors
             )
             r += "{C0}({CCPUUtil}{:4.0f}%{C0}, {CCPUMemU}{:>6}{C0})".format(
-                _repr(p['cpu_percent'], '--'),
-                bytes2human(_repr(p['cpu_memory_usage'], 0)), **colors
+                _repr(_p['cpu_percent'], '--'),
+                bytes2human(_repr(_p['cpu_memory_usage'], 0)), **colors
             )
             full_command_pretty = prettify_commandline(
-                p['full_command'], colors['C1'], colors['CCmd'])
+                _p['full_command'], colors['C1'], colors['CCmd'])
             r += "{C0}: {CCmd}{}{C0}".format(
                 _repr(full_command_pretty, '?'),
                 **colors
@@ -359,102 +380,112 @@ class GPUStatCollection(object):
     def new_query():
         """Query the information of all the GPUs on local machine"""
 
-        N.nvmlInit()
+        nvmlInit()
 
         def _decode(b):
             if isinstance(b, bytes):
                 return b.decode('utf-8')  # for python3, to unicode
             return b
 
-        def get_gpu_info(handle):
+        def get_gpu_info(_handle):
             """Get one GPU information specified by nvml handle"""
 
-            def get_process_info(nv_process):
+            def get_process_info(_nv_process):
                 """Get the process information of specific pid"""
-                process = {}
-                if nv_process.pid not in GPUStatCollection.global_processes:
-                    GPUStatCollection.global_processes[nv_process.pid] = \
-                        psutil.Process(pid=nv_process.pid)
-                ps_process = GPUStatCollection.global_processes[nv_process.pid]
+                _process = {}
+                if _nv_process.pid not in GPUStatCollection.global_processes:
+                    GPUStatCollection.global_processes[_nv_process.pid] = \
+                        psutil.Process(pid=_nv_process.pid)
+                ps_process = GPUStatCollection.global_processes[_nv_process.pid]
 
                 # TODO: ps_process is being cached, but the dict below is not.
-                process['username'] = ps_process.username()
+                _process['username'] = ps_process.username()
                 # cmdline returns full path;
                 # as in `ps -o comm`, get short cmdnames.
                 _cmdline = ps_process.cmdline()
                 if not _cmdline:
                     # sometimes, zombie or unknown (e.g. [kworker/8:2H])
-                    process['command'] = '?'
-                    process['full_command'] = ['?']
+                    _process['command'] = '?'
+                    _process['full_command'] = ['?']
                 else:
-                    process['command'] = os.path.basename(_cmdline[0])
-                    process['full_command'] = _cmdline
+                    _process['command'] = os.path.basename(_cmdline[0])
+                    _process['full_command'] = _cmdline
                 # Bytes to MBytes
                 # if drivers are not TTC this will be None.
-                usedmem = nv_process.usedGpuMemory // MB if \
-                    nv_process.usedGpuMemory else None
-                process['gpu_memory_usage'] = usedmem
-                process['cpu_percent'] = ps_process.cpu_percent()
-                process['cpu_memory_usage'] = \
+                used_mem = _nv_process.usedGpuMemory // MB if \
+                    _nv_process.usedGpuMemory else None
+                _process['gpu_memory_usage'] = used_mem
+                _process['cpu_percent'] = ps_process.cpu_percent()
+                _process['cpu_memory_usage'] = \
                     round((ps_process.memory_percent() / 100.0) *
                           psutil.virtual_memory().total)
-                process['pid'] = nv_process.pid
-                return process
+                _process['pid'] = _nv_process.pid
+                return _process
 
-            name = _decode(N.nvmlDeviceGetName(handle))
-            uuid = _decode(N.nvmlDeviceGetUUID(handle))
+            name = _decode(nvmlDeviceGetName(_handle))
+            uuid = _decode(nvmlDeviceGetUUID(_handle))
 
             try:
-                temperature = N.nvmlDeviceGetTemperature(
-                    handle, N.NVML_TEMPERATURE_GPU
+                temperature = nvmlDeviceGetTemperature(
+                    _handle, NVML_TEMPERATURE_GPU
                 )
-            except N.NVMLError:
+            except NVMLError as err:
+                warn(__name__, str(err))
                 temperature = None  # Not supported
 
             try:
-                fan_speed = N.nvmlDeviceGetFanSpeed(handle)
-            except N.NVMLError:
+                fan_speed = nvmlDeviceGetFanSpeed(_handle)
+            except NVMLError as err:
+                warn(__name__, str(err))
                 fan_speed = None  # Not supported
 
             try:
-                memory = N.nvmlDeviceGetMemoryInfo(handle)  # in Bytes
-            except N.NVMLError:
+                memory = nvmlDeviceGetMemoryInfo(_handle)  # in Bytes
+            except NVMLError as err:
+                warn(__name__, str(err))
                 memory = None  # Not supported
 
             try:
-                utilization = N.nvmlDeviceGetUtilizationRates(handle)
-            except N.NVMLError:
+                utilization = nvmlDeviceGetUtilizationRates(_handle)
+            except NVMLError as err:
+                warn(__name__, str(err))
                 utilization = None  # Not supported
 
             try:
-                utilization_enc = N.nvmlDeviceGetEncoderUtilization(handle)
-            except N.NVMLError:
+                utilization_enc = nvmlDeviceGetEncoderUtilization(_handle)
+            except NVMLError as err:
+                warn(__name__, str(err))
                 utilization_enc = None  # Not supported
 
             try:
-                utilization_dec = N.nvmlDeviceGetDecoderUtilization(handle)
-            except N.NVMLError:
+                utilization_dec = nvmlDeviceGetDecoderUtilization(_handle)
+            except NVMLError as err:
+                warn(__name__, str(err))
                 utilization_dec = None  # Not supported
 
             try:
-                power = N.nvmlDeviceGetPowerUsage(handle)
-            except N.NVMLError:
+                power = nvmlDeviceGetPowerUsage(_handle)
+            except NVMLError as err:
+                warn(__name__, str(err))
                 power = None
 
             try:
-                power_limit = N.nvmlDeviceGetEnforcedPowerLimit(handle)
-            except N.NVMLError:
+                power_limit = nvmlDeviceGetEnforcedPowerLimit(_handle)
+            except NVMLError as err:
+                warn(__name__, str(err))
                 power_limit = None
 
             try:
                 nv_comp_processes = \
-                    N.nvmlDeviceGetComputeRunningProcesses(handle)
-            except N.NVMLError:
+                    nvmlDeviceGetComputeRunningProcesses(_handle)
+            except NVMLError as err:
+                warn(__name__, str(err))
                 nv_comp_processes = None  # Not supported
             try:
                 nv_graphics_processes = \
-                    N.nvmlDeviceGetGraphicsRunningProcesses(handle)
-            except N.NVMLError:
+                    nvmlDeviceGetGraphicsRunningProcesses(_handle)
+            except NVMLError as err:
+                warn(__name__, str(err))
                 nv_graphics_processes = None  # Not supported
 
             if nv_comp_processes is None and nv_graphics_processes is None:
@@ -492,9 +523,8 @@ class GPUStatCollection(object):
                     cache_process = GPUStatCollection.global_processes[pid]
                     process['cpu_percent'] = cache_process.cpu_percent()
 
-            index = N.nvmlDeviceGetIndex(handle)
-            gpu_info = {
-                'index'               : index,
+            _gpu_info = {
+                'index'               : nvmlDeviceGetIndex(_handle),
                 'uuid'                : uuid,
                 'name'                : name,
                 'temperature.gpu'     : temperature,
@@ -513,25 +543,26 @@ class GPUStatCollection(object):
                 'processes'           : processes,
             }
             GPUStatCollection.clean_processes()
-            return gpu_info
+            return _gpu_info
 
         # 1. get the list of gpu and status
         gpu_list = []
-        device_count = N.nvmlDeviceGetCount()
+        device_count = nvmlDeviceGetCount()
 
         for index in range(device_count):
-            handle = N.nvmlDeviceGetHandleByIndex(index)
+            handle = nvmlDeviceGetHandleByIndex(index)
             gpu_info = get_gpu_info(handle)
             gpu_stat = GPUStat(gpu_info)
             gpu_list.append(gpu_stat)
 
         # 2. additional info (driver version, etc).
         try:
-            driver_version = _decode(N.nvmlSystemGetDriverVersion())
-        except N.NVMLError:
+            driver_version = _decode(nvmlSystemGetDriverVersion())
+        except NVMLError as e:
+            warn(__name__, str(e))
             driver_version = None  # N/A
 
-        N.nvmlShutdown()
+        nvmlShutdown()
         return GPUStatCollection(gpu_list, driver_version=driver_version)
 
     def __len__(self):
@@ -589,13 +620,15 @@ class GPUStatCollection(object):
                 timestr = self.query_time.strftime(time_format)
             header_template = '{t.bold_white}{hostname:{width}}{t.normal}  '
             header_template += '{timestr}  '
-            header_template += '{t.bold_black}{driver_version}{t.normal}'
+            header_template += '{t.bold_black}{driver_version}{t.normal}  '
+            header_template += 'CUDA {cuda_version}'
 
             header_msg = header_template.format(
                 hostname=self.hostname,
                 width=gpuname_width + 3,  # len("[?]")
                 timestr=timestr,
                 driver_version=self.driver_version,
+                cuda_version=self.cuda_version,
                 t=t_color,
             )
 
