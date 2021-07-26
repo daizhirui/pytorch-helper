@@ -2,14 +2,16 @@
 
 import os
 from typing import Callable
-from typing import Sequence
+from typing import List
 
 from pytorch_helper.settings.options.task import TaskOption
 from pytorch_helper.utils.dist import is_distributed
 from pytorch_helper.utils.dist import is_rank0
+from pytorch_helper.utils.gpu import wait_gpus
 from pytorch_helper.utils.io import load_yaml
 from pytorch_helper.utils.log import info
 from .parse import MainArg
+from ..utils.dist import synchronize
 
 
 class LauncherTask:
@@ -37,7 +39,7 @@ class LauncherTask:
 
 
 def run_task(
-        gpus: Sequence[int], main_args, task_option: TaskOption,
+        gpus: List[int], main_args: MainArg, task_option: TaskOption,
         register_func: Callable, *args
 ):
     """ default function used to run the task
@@ -50,6 +52,10 @@ def run_task(
     :param args: extra args
     :return:
     """
+    if main_args.wait_gpus:
+        wait_gpus(gpus, collect=False)
+    synchronize()
+
     register_func()
     from pytorch_helper.settings.space import Spaces
     task_option.gpu_ids = gpus
