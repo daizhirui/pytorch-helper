@@ -53,7 +53,7 @@ def wait_gpus(
 
         for i, gpu_id in enumerate(gpus_to_wait):
             q = queries[gpu_id]
-            if len(q.processes) > 0:
+            if q.processes is not None and len(q.processes) > 0:
                 log.info(
                     __name__, f'GPU {gpu_id} is used, check again in 5 seconds'
                 )

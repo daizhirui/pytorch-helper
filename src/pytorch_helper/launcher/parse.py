@@ -154,8 +154,7 @@ class MainArg:
         """
         from pytorch_helper.utils.gpu import wait_gpus
         if args.wait_gpus:
-            use_ddp = len(args.use_gpus) > 1 and not args.use_data_parallel
-            wait_gpus(args.use_gpus, distributed=use_ddp)
+            wait_gpus(args.use_gpus)
 
         import torch
         if args.boost:
