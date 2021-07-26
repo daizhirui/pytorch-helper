@@ -2,12 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-Implementation of gpustat
-
-@author Jongwook Choi
-@url https://github.com/wookayin/gpustat
+The original version of this file is from https://github.com/wookayin/gpustat
+Thanks to the author of gpustat, Jongwook Choi
 """
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -25,7 +22,6 @@ import psutil
 from blessed import Terminal
 from six.moves import cStringIO as StringIO
 
-# import .pynvml as N
 from .pynvml import NVMLError
 from .pynvml import NVML_TEMPERATURE_GPU
 from .pynvml import nvmlDeviceGetComputeRunningProcesses
@@ -45,6 +41,7 @@ from .pynvml import nvmlDeviceGetUUID
 from .pynvml import nvmlDeviceGetUtilizationRates
 from .pynvml import nvmlInit
 from .pynvml import nvmlShutdown
+from .pynvml import nvmlSystemGetCudaDriverVersion
 from .pynvml import nvmlSystemGetDriverVersion
 from .util import bytes2human
 from .util import prettify_commandline
@@ -54,6 +51,8 @@ NOT_SUPPORTED = 'Not Supported'
 MB = 1024 * 1024
 
 IS_WINDOWS = 'windows' in platform.platform().lower()
+
+__all__ = ['GPUStat', 'GPUStatCollection']
 
 
 class GPUStat(object):
@@ -362,13 +361,14 @@ class GPUStat(object):
 class GPUStatCollection(object):
     global_processes = {}
 
-    def __init__(self, gpu_list, driver_version=None):
+    def __init__(self, gpu_list, driver_version=None, cuda_version=None):
         self.gpus = gpu_list
 
         # attach additional system information
         self.hostname = platform.node()
         self.query_time = datetime.now()
         self.driver_version = driver_version
+        self.cuda_version = cuda_version
 
     @staticmethod
     def clean_processes():
@@ -562,8 +562,14 @@ class GPUStatCollection(object):
             warn(__name__, str(e))
             driver_version = None  # N/A
 
+        try:
+            cuda_version = _decode(nvmlSystemGetCudaDriverVersion())
+        except NVMLError as e:
+            warn(__name__, str(e))
+            cuda_version = None  # N/A
+
         nvmlShutdown()
-        return GPUStatCollection(gpu_list, driver_version=driver_version)
+        return GPUStatCollection(gpu_list, driver_version, cuda_version)
 
     def __len__(self):
         return len(self.gpus)
@@ -670,11 +676,3 @@ class GPUStatCollection(object):
                   default=date_handler)
         fp.write(os.linesep)
         fp.flush()
-
-
-def new_query():
-    """
-    Obtain a new GPUStatCollection instance by querying nvidia-smi
-    to get the list of GPUs and running process information.
-    """
-    return GPUStatCollection.new_query()

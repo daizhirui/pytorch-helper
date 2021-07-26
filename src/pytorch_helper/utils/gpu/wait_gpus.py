@@ -9,10 +9,9 @@ from typing import List
 
 import torch
 
-from pytorch_helper.utils import log
-from .dist import is_distributed
-from .dist import synchronize
 from .gpustat import GPUStatCollection
+from ..dist import synchronize
+from ..log import info
 
 
 def collect_gpu(gpu_id: int, mb_size: int = None) -> torch.Tensor:
@@ -22,7 +21,7 @@ def collect_gpu(gpu_id: int, mb_size: int = None) -> torch.Tensor:
     :param mb_size: int of memory size in MB to collect
     :return: torch.Tensor of the requested memory
     """
-    log.info(__name__, f'Collect gpu {gpu_id}')
+    info(__name__, f'Collect gpu {gpu_id}')
     device = torch.device('cuda', gpu_id)
     if mb_size is None:
         q = GPUStatCollection.new_query()[gpu_id]
@@ -56,17 +55,17 @@ def wait_gpus(
         for gpu_id in gpus:
             q = queries[gpu_id]
             if q.processes is not None and len(q.processes) > 0:
-                log.info(
+                info(
                     __name__, f'GPU {gpu_id} is used, check again in 5 seconds'
                 )
                 gpus_not_ready = True
                 break
             else:
-                log.info(__name__, f'GPU {gpu_id} is ready')
+                info(__name__, f'GPU {gpu_id} is ready')
                 if collect:
                     blocks[gpu_id] = collect_gpu(gpu_id, q.memory_total)
 
-    log.info(__name__, f'GPUs {gpus} are ready!')
+    info(__name__, f'GPUs {gpus} are ready!')
 
     if sync:
         synchronize()

@@ -8,8 +8,8 @@ import time
 
 from blessed import Terminal
 
-from . import __version__
-from .core import GPUStatCollection
+from pytorch_helper.utils.gpu import __version__
+from pytorch_helper.utils.gpu.gpustat import GPUStatCollection
 
 
 def print_gpustat(json=False, debug=False, **kwargs):

@@ -4,9 +4,6 @@ import os.path
 
 
 def bytes2human(in_bytes):
-    '''
-
-    '''
     suffixes = ('B', 'KB', 'MB', 'GB', 'TB', 'PB')
     suffix = 0
     result = int(in_bytes)
@@ -20,10 +17,10 @@ def bytes2human(in_bytes):
 
 
 def prettify_commandline(cmdline, color_command='', color_text=''):
-    '''
+    """
     Prettify and colorize a full command-line (given as list of strings),
     where command (basename) is highlighted in a different color.
-    '''
+    """
     # cmdline: Iterable[str]
     if isinstance(cmdline, str):
         return cmdline
