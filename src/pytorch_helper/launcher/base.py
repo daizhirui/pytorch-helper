@@ -21,11 +21,11 @@ class LauncherTask:
         """
         raise NotImplementedError
 
-    def backup(self, immediate: bool, resumbale: bool):
+    def backup(self, immediate: bool, resumable: bool):
         """ backup the task status
 
         :param immediate: Bool to backup immediately
-        :param resumbale: Bool to backup states for resuming the task
+        :param resumable: Bool to backup states for resuming the task
         """
         raise NotImplementedError
 
@@ -61,7 +61,7 @@ def run_task(
     finally:
         if is_rank0() and task.option.train:
             info(__name__, 'backup the task')
-            task.backup(immediate=True, resumbale=True)
+            task.backup(immediate=True, resumable=True)
         if is_distributed():
             from torch.distributed import destroy_process_group
             destroy_process_group()
