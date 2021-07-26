@@ -53,7 +53,7 @@ def run_task(
     :return:
     """
     if main_args.wait_gpus:
-        wait_gpus(gpus, collect=False)
+        wait_gpus(gpus)
     synchronize()
 
     register_func()
