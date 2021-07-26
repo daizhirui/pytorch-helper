@@ -8,14 +8,14 @@ import time
 
 from blessed import Terminal
 
-from gpustat import __version__
+from pytorch_helper.utils.gpustat import __version__
 from .core import GPUStatCollection
 
 
 def print_gpustat(json=False, debug=False, **kwargs):
-    '''
+    """
     Display the GPU query results into standard output.
-    '''
+    """
     try:
         gpu_stats = GPUStatCollection.new_query()
     except Exception as e:
@@ -64,7 +64,7 @@ def main(*argv):
         argv = list(sys.argv)
 
     # attach SIGPIPE handler to properly handle broken pipe
-    try: # sigpipe not available under windows. just ignore in this case
+    try:  # sigpipe not available under windows. just ignore in this case
         import signal
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)
     except Exception as e:
