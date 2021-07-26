@@ -4,9 +4,12 @@ from typing import Sized
 from typing import Tuple
 from typing import Union
 
+import matplotlib
 import numpy as np
 import torch
 from cv2 import cv2
+
+matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 from numpy import ndarray
 from torch import Tensor

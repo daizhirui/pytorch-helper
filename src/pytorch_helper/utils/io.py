@@ -10,6 +10,9 @@ from typing import Callable
 from typing import List
 from typing import Union
 
+import matplotlib
+
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import ruamel.yaml as yaml
