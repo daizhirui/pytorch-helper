@@ -1,4 +1,5 @@
 import os
+from collections import OrderedDict
 from typing import Callable
 from typing import List
 from typing import Type
@@ -43,12 +44,12 @@ class LauncherTask:
 
 
 def run_task(
-        gpus: List[int], main_args: MainArg, task_option: TaskOption,
+        cuda_ids: List[int], main_args: MainArg, task_option: TaskOption,
         register_func: Callable, *args
 ):
     """ default function used to run the task
 
-    :param gpus: Sequence of gpu devices
+    :param cuda_ids: Sequence of CUDA device indices
     :param main_args: Dict of arguments parsed from the command line
     :param task_option: TaskOption used to build the task
     :param register_func: Callable to setup `settings.space.Spaces`, used
@@ -58,12 +59,14 @@ def run_task(
     """
     if main_args.wait_gpus:
         from ..utils.gpu.wait_gpus import wait_gpus
-        wait_gpus(main_args.cuda_device_mapping)
+        wait_gpus(OrderedDict(
+            (x, main_args.cuda_device_mapping[x]) for x in cuda_ids
+        ))
     synchronize()
 
     register_func()
     from pytorch_helper.settings.space import Spaces
-    task_option.gpu_ids = gpus
+    task_option.cuda_ids = cuda_ids
     task: LauncherTask = Spaces.build_task(task_option)
     try:
         task.run()
@@ -97,7 +100,7 @@ class Launcher:
 
         from torch import distributed
         self.is_distributed = len(self.args.use_gpus) > 1 \
-                              and hasattr(distributed, 'is_initialized') \
+                              and distributed.is_available() \
                               and not self.args.use_data_parallel
 
         task_dict = load_yaml(self.args.task_option_file)
@@ -123,7 +126,7 @@ class Launcher:
             task_dict['dataset_path'] = self.args.dataset_path
         if self.args.output_path:
             task_dict['output_path'] = self.args.output_path
-        task_dict['distributed'] = self.is_distributed
+        task_dict['is_distributed'] = self.is_distributed
 
         task_dict['test_option'] = None
         if self.args.test_option_file:

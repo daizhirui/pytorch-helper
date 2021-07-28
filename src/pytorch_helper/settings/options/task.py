@@ -42,10 +42,10 @@ class TaskOption(OptionBase):
     resume: bool
     test_option: Any
     for_train: InitVar[bool]
-    distributed: InitVar[bool]
+    is_distributed: InitVar[bool]
 
-    def __post_init__(self, for_train: bool, distributed: bool):
-        self.gpu_ids = None
+    def __post_init__(self, for_train: bool, is_distributed: bool):
+        self.cuda_ids = None
         self.train = for_train
 
         if 'DATASET_PATH' in os.environ and 'OUTPUT_PATH' in os.environ:
@@ -78,7 +78,7 @@ class TaskOption(OptionBase):
 
         if isinstance(self.dataloader, dict):
             self.dataloader['kwargs']['root'] = self.dataset_path
-            self.dataloader['kwargs']['use_ddp'] = distributed
+            self.dataloader['kwargs']['use_ddp'] = is_distributed
             self.dataloader = DataloaderOption.load_from_dict(self.dataloader)
 
         self.loss = self.load_option(self.loss, LossOption)

@@ -67,8 +67,9 @@ def wait_gpus(gpus: dict, collect=True, pre_release=True, sync=True):
                     warn(__name__, f'GPU {gpu_id} processes is None')
                 info(__name__, f'GPU {gpu_id} is ready')
                 if collect:
-                    blocks[gpu_id] = collect_cuda_device(cuda_id,
-                                                         q.memory_total)
+                    blocks[gpu_id] = collect_cuda_device(
+                        cuda_id, q.memory_total
+                    )
 
     info(__name__, f'GPUs {gpus.values()} are ready!')
 

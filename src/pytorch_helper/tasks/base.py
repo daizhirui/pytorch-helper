@@ -55,7 +55,7 @@ class TaskBase(LauncherTask, ABC):
         self._option = task_option
 
         # gpu setting
-        gpu_ids = self._option.gpu_ids
+        gpu_ids = self._option.cuda_ids
         self.is_distributed = is_distributed()
         # check data parallel: if distributed data parallel is enabled, should
         # check visible gpu devices via torch.cuda.device_count(), otherwise,
