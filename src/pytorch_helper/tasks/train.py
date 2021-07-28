@@ -1,7 +1,6 @@
 import os
 from abc import ABC
 from collections import OrderedDict
-from numbers import Number
 
 import torch
 from torch.utils.tensorboard import SummaryWriter

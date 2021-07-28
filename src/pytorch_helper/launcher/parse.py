@@ -4,6 +4,7 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Type
 from typing import TypeVar
+from typing import Union
 
 from ..utils.log import info
 
@@ -17,7 +18,7 @@ class MainArg:
     task_option_file: str
     test_option_file: str
     use_gpus: list
-    wait_gpus: bool
+    wait_gpus: Union[bool, list]
     pth_path: str
     resume: bool
     dataset_path: str
@@ -30,9 +31,20 @@ class MainArg:
 
     def __post_init__(self):
         os.environ['DDP_PORT'] = str(self.ddp_port)
-        self.use_gpus.sort()
+        if len(self.wait_gpus) > 0:
+            assert len(self.wait_gpus) == len(self.use_gpus), \
+                '--wait-gpus should post the same number of GPUs as --use-gpus'
+            nvidia_smi_mapping = OrderedDict(zip(self.use_gpus, self.wait_gpus))
+            self.use_gpus.sort()
+            self.cuda_device_mapping = OrderedDict(
+                (i, nvidia_smi_mapping[x]) for i, x in enumerate(self.use_gpus)
+            )
+            self.wait_gpus = True
+        else:
+            self.use_gpus.sort()
+            self.cuda_device_mapping = None
+            self.wait_gpus = False
         os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, self.use_gpus))
-        self.cuda_device_mapping = OrderedDict(enumerate(self.use_gpus))
         self.use_gpus = list(range(len(self.use_gpus)))
 
         os.environ['DEBUG'] = '1' if self.debug else '0'
@@ -74,8 +86,14 @@ class MainArg:
             help='Indices of GPUs for training')
         group.add_argument(
             '--wait-gpus',
-            action='store_true',
-            help='Wait for selected GPUs to be ready before training')
+            nargs='+', default=[], type=int, metavar='GPU_INDEX',
+            help='NVIDIA-SMI Indices of GPUs specified by --use-gpus to wait. '
+                 'Note that these indices may be different from the ones '
+                 'posted to --use-gpus if NVIDIA-SMI presents an abnormal '
+                 'device mapping. e.g. GPU4 shown in NVIDIA-SMI might be '
+                 'GPU8 in --use-gpus. This is abnormal but --wait-gpus can '
+                 'deal with it correctly if you post the correct mapping by '
+                 '"--use-gpus 8 --wait-gpus 4".')
         group.add_argument(
             '--boost',
             action='store_true',

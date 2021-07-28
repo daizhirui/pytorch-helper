@@ -10,6 +10,7 @@ import torch
 from .gpustat import GPUStatCollection
 from ..dist import synchronize
 from ..log import info
+from ..log import warn
 
 
 def collect_cuda_device(cuda_id: int, mb_size: int = None) -> torch.Tensor:
@@ -40,6 +41,9 @@ def wait_gpus(gpus: dict, collect=True, pre_release=True, sync=True):
     :param sync: Bool to synchronize all the processes such that they release
         the gpu memory together
     """
+    if gpus is None:
+        warn(__name__, '`gpus` is None, potential bug in gpu management module')
+        return
     gpus_not_ready = True
     blocks = dict()
     collected = dict()
@@ -59,6 +63,8 @@ def wait_gpus(gpus: dict, collect=True, pre_release=True, sync=True):
                 gpus_not_ready = True
                 break
             else:
+                if q.processes is None:
+                    warn(__name__, f'GPU {gpu_id} processes is None')
                 info(__name__, f'GPU {gpu_id} is ready')
                 if collect:
                     blocks[gpu_id] = collect_cuda_device(cuda_id,
