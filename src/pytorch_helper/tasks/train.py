@@ -1,6 +1,7 @@
 import os
 from abc import ABC
 from collections import OrderedDict
+from numbers import Number
 
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -385,16 +386,6 @@ class TrainTask(TaskBase, ABC):
         """
         summary = OrderedDict()
 
-        if self.tboard is None:
-            summary['name'] = self.option.name
-            summary['datetime'] = self.option.datetime
-            summary['epoch'] = self.epoch
-            if self.option.model.pth_path is None:
-                summary['pth_file'] = 'None'
-            else:
-                summary['pth_file'] = os.path.basename(
-                    self.option.model.pth_path)
-
         for key in sorted(list(self.in_stage_meter_keys)):
             if key.startswith(self.cur_stage):
                 summary[key] = self.meter.mean(key)
@@ -407,6 +398,15 @@ class TrainTask(TaskBase, ABC):
                 reduce_op=Meter.ReduceOp.STORE
             )
             info(__name__, f'{tag} = {v}')
+
+        summary['name'] = self.option.name
+        summary['datetime'] = self.option.datetime
+        summary['epoch'] = self.epoch
+        if self.option.model.pth_path is None:
+            summary['pth_file'] = 'None'
+        else:
+            summary['pth_file'] = os.path.basename(
+                self.option.model.pth_path)
 
         if self.is_rank0:
             self.rank0_update_logging_after_stage(summary)
