@@ -399,17 +399,9 @@ class TrainTask(TaskBase, ABC):
             )
             info(__name__, f'{tag} = {v}')
 
-        summary['name'] = self.option.name
-        summary['datetime'] = self.option.datetime
-        summary['epoch'] = self.epoch
-        if self.option.model.pth_path is None:
-            summary['pth_file'] = 'None'
-        else:
-            summary['pth_file'] = os.path.basename(
-                self.option.model.pth_path)
-
         if self.is_rank0:
             self.rank0_update_logging_after_stage(summary)
+
         return summary
 
     def rank0_setup_logging_before_stage(self):

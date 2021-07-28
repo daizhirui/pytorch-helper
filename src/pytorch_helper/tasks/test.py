@@ -1,5 +1,6 @@
 import os
 from abc import ABC
+from typing import OrderedDict
 
 import numpy as np
 import torch
@@ -79,4 +80,16 @@ class TestTask(TrainTask, ABC):
         for key, value in self.model_output_dict.items():
             self.model_output_dict[key] = np.concatenate(value, axis=0)
 
+        return summary
+
+    def summarize_logging_after_stage(self) -> OrderedDict:
+        summary = super(TestTask, self).summarize_logging_after_stage()
+        summary['name'] = self.option.name
+        summary['datetime'] = self.option.datetime
+        summary['epoch'] = self.epoch
+        if self.option.model.pth_path is None:
+            summary['pth_file'] = 'None'
+        else:
+            summary['pth_file'] = os.path.basename(
+                self.option.model.pth_path)
         return summary
