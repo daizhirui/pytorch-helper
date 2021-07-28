@@ -4,6 +4,10 @@ import numpy as np
 from numpy import ndarray
 from torch import Tensor
 
+__all__ = [
+    'to_numpy'
+]
+
 
 def to_numpy(arr: Union[ndarray, Tensor], np_type=np.float32) -> ndarray:
     """ convert `arr` to numpy array
@@ -17,4 +21,4 @@ def to_numpy(arr: Union[ndarray, Tensor], np_type=np.float32) -> ndarray:
     elif isinstance(arr, Tensor):
         return arr.data.cpu().numpy().astype(np_type)
     else:
-        raise ValueError(f"Unknown data type: {np_type(arr)}")
+        return np.array(arr, dtype=np_type)

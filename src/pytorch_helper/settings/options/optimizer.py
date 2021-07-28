@@ -1,9 +1,10 @@
-# Copyright (c) Zhirui Dai
 from dataclasses import dataclass
 
 import torch
 
 from .base import OptionBase
+
+__all__ = ['OptimizerOption']
 
 
 @dataclass()

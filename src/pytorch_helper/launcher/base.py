@@ -1,17 +1,21 @@
-# Copyright (c) Zhirui Dai
-
 import os
 from typing import Callable
 from typing import List
+from typing import Type
 
-from pytorch_helper.settings.options.task import TaskOption
-from pytorch_helper.utils.dist import is_distributed
-from pytorch_helper.utils.dist import is_rank0
-from pytorch_helper.utils.gpu import wait_gpus
-from pytorch_helper.utils.io import load_yaml
-from pytorch_helper.utils.log import info
 from .parse import MainArg
+from ..settings.options.task import TaskOption
+from ..utils.dist import is_distributed
+from ..utils.dist import is_rank0
 from ..utils.dist import synchronize
+from ..utils.io import load_yaml
+from ..utils.log import info
+
+__all__ = [
+    'LauncherTask',
+    'Launcher',
+    'run_task'
+]
 
 
 class LauncherTask:
@@ -53,7 +57,8 @@ def run_task(
     :return:
     """
     if main_args.wait_gpus:
-        wait_gpus(gpus)
+        from ..utils.gpu.wait_gpus import wait_gpus
+        wait_gpus(main_args.cuda_device_mapping)
     synchronize()
 
     register_func()
@@ -75,7 +80,8 @@ def run_task(
 
 class Launcher:
     def __init__(
-            self, arg_cls: MainArg, register_func: Callable, for_train: bool
+            self, arg_cls: Type[MainArg], register_func: Callable,
+            for_train: bool
     ):
         """ Base class of launchers for building and running a task properly
 

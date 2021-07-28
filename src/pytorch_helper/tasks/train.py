@@ -1,4 +1,3 @@
-# Copyright (c) Zhirui Dai
 import os
 from abc import ABC
 from collections import OrderedDict
@@ -6,11 +5,13 @@ from collections import OrderedDict
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from pytorch_helper.utils import log
-from pytorch_helper.utils.dist import synchronize
-from pytorch_helper.utils.io import save_pth
-from pytorch_helper.utils.meter import Meter
+from .base import BatchPack
 from .base import TaskBase
+from ..utils.dist import synchronize
+from ..utils.io import save_pth
+from ..utils.log import info
+from ..utils.log import pbar
+from ..utils.meter import Meter
 
 __all__ = ['TrainTask']
 
@@ -45,23 +46,23 @@ class TrainTask(TaskBase, ABC):
         if self.is_rank0:
             # progress bar
             self.progress_bars = {
-                'epoch'         : log.pbar(
+                'epoch'         : pbar(
                     initial=self.epoch, total=self.option.train_setting.epochs,
                     position=0, desc='Epoch'
                 ),
-                self.STAGE_TRAIN: log.pbar(
+                self.STAGE_TRAIN: pbar(
                     position=1, desc='Train'
                 ),
-                self.STAGE_VALID: log.pbar(
+                self.STAGE_VALID: pbar(
                     position=2, desc='Valid'
                 ),
-                self.STAGE_TEST : log.pbar(
+                self.STAGE_TEST : pbar(
                     position=3, desc=' Test'
                 )
             }
 
         if self.is_rank0:
-            log.info(__name__, "Initialize tensorboard")
+            info(__name__, "Initialize tensorboard")
             self.tboard = SummaryWriter(log_dir=self.option.output_path_tb)
 
         if state_dict and self.option.resume:
@@ -80,7 +81,7 @@ class TrainTask(TaskBase, ABC):
                 self.epoch = state_dict['epoch'] + 1
                 if self.is_rank0:
                     self.progress_bars['epoch'].update(self.epoch)
-                log.info(__name__, f"Resume from epoch {state_dict['epoch']}")
+                info(__name__, f"Resume from epoch {state_dict['epoch']}")
 
     def state_dict(self):
         state_dict = super(TrainTask, self).state_dict()
@@ -110,7 +111,7 @@ class TrainTask(TaskBase, ABC):
         pth_name = f'{name}.pth' if name else f'epoch_{self.epoch}.pth'
         path = os.path.join(self.option.output_path_pth, pth_name)
         save_pth(path, state_dict)
-        log.info(__name__, f"Saving checkpoint: {path} at epoch {self.epoch}")
+        info(__name__, f"Saving checkpoint: {path} at epoch {self.epoch}")
 
     def save_best_model(self, valid_loss):
         """ save the model which has minimum validation loss
@@ -197,7 +198,7 @@ class TrainTask(TaskBase, ABC):
         """
         for epoch in range(self.epoch, self.option.train_setting.epochs):
             # NOTE: different stage should not share the same set of keys
-            self.meter.reset(self.in_stage_meter_keys)
+            self.meter.reset_tags(self.in_stage_meter_keys)
             valid_summary = self.one_epoch(epoch)
             self.after_epoch(valid_summary)
         # save only the state dicts of model and loss_fn
@@ -219,15 +220,15 @@ class TrainTask(TaskBase, ABC):
             self.cur_dataloader = self.dataloader.train_loader
             if self.current_train_routine.set_init_lr(self.optimizer):
                 if self.is_rank0 and self.epoch > 0:
-                    log.info(__name__, "Save before applying new routine")
+                    info(__name__, "Save before applying new routine")
                     self.epoch -= 1
                     self.save_pth(f'epoch_{self.epoch}')
                     self.epoch += 1
             if self.current_train_routine.train_modules is not None:
                 self.freeze_and_unfreeze_modules(
                     self.current_train_routine.train_modules,
-                    # optimizers like Adam still change the frozen weight because
-                    # they are using statistics of gradients
+                    # optimizers like Adam still change the frozen weight
+                    # because they are using statistics of gradients
                     reset_optimizer=self.current_train_routine.optimizer_reset
                 )
                 self.current_train_routine.optimizer_reset = False
@@ -239,7 +240,7 @@ class TrainTask(TaskBase, ABC):
             self.cur_dataloader = self.dataloader.test_loader
         self.setup_logging_before_stage()
 
-    def load_batch(self):
+    def load_batch_pack(self):
         """ this method is used as an iterator of the current dataloader, which
         also loads the data from CPU to GPU.
         """
@@ -247,51 +248,52 @@ class TrainTask(TaskBase, ABC):
             # should return a dict of result to use
             for k, v in batch.items():
                 batch[k] = v.cuda(non_blocking=self.is_parallel)
-            yield batch
+            batch_pack = BatchPack(gt=batch)
+            yield batch_pack
 
-    def train(self, batch):
+    def train(self, batch_pack: BatchPack) -> BatchPack:
         """ this method completes the training with a mini-batch
 
-        :param batch: mini-batch
-        :return: dict of training result for the mini-batch
+        :param batch_pack: BatchPack that stores ground truth, prediction, loss
+            and batch size
+        :return: BatchPack of training result for the mini-batch
         """
         # should return a dict of result to use
         self.optimizer.zero_grad()
-        result = self.pack_up_result(
-            *self.model_forward_backward(batch, backward=True)
-        )
+        self.model_forward_backward(batch_pack, backward=True)
         self.optimizer.step()
-        return result
+        return batch_pack
 
-    def _train(self):
+    def _train(self) -> BatchPack:
         """ this private method has better not be changed. It is designed to
         finish the training over the training dataset and log the result
         properly.
 
-        :return: dict of training result of the last mini-batch
+        :return: BatchPack of training result of the last mini-batch
         """
         self.cur_stage = self.STAGE_TRAIN
         self.setup_before_stage()
 
         with torch.enable_grad():
-            for batch in self.load_batch():
-                result = self.train(batch)
+            for batch_pack in self.load_batch_pack():
+                self.train(batch_pack)
                 synchronize()
-                self.update_logging_in_stage(result)
+                self.update_logging_in_stage(batch_pack)
                 synchronize()
-        return result
+        return batch_pack
 
-    def valid(self, batch):
+    def valid(self, batch_pack: BatchPack) -> BatchPack:
         """ this method completes the validation with a mini-batch
 
-        :param batch: mini-batch
-        :return: dict of validation result for the mini-batch
+        :param batch_pack: BatchPack that stores ground truth, prediction, loss
+            and batch size
+        :return: BatchPack of validation result for the mini-batch
         """
         # should return a dict of result to use
         with torch.no_grad():
-            return self.pack_up_result(*self.model_forward_backward(batch))
+            return self.model_forward_backward(batch_pack)
 
-    def _valid(self):
+    def _valid(self) -> BatchPack:
         """ this private method has better not be changed. It is designed to
         finish the validation over the validation dataset and log the result
         properly.
@@ -302,39 +304,40 @@ class TrainTask(TaskBase, ABC):
         self.setup_before_stage()
 
         with torch.no_grad():
-            for batch in self.load_batch():
-                result = self.valid(batch)
+            for batch_pack in self.load_batch_pack():
+                self.valid(batch_pack)
                 synchronize()
-                self.update_logging_in_stage(result)
+                self.update_logging_in_stage(batch_pack)
                 synchronize()
-        return result
+        return batch_pack
 
-    def test(self, batch):
+    def test(self, batch_pack: BatchPack) -> BatchPack:
         """ this method completes the test with a mini-batch
 
-        :param batch: mini-batch
-        :return: dict of test result for the mini-batch
+        :param batch_pack: BatchPack that stores ground truth, prediction, loss
+            and batch size
+        :return: BatchPack of test result for the mini-batch
         """
         # should return a dict of result to use
         with torch.no_grad():
-            return self.pack_up_result(*self.model_forward_backward(batch))
+            return self.model_forward_backward(batch_pack)
 
-    def _test(self):
+    def _test(self) -> BatchPack:
         """ this private method has better not be changed. It is designed to
         finish the test over the test dataset and log the result properly.
 
-        :return: dict of test result of the last mini-batch
+        :return: BatchPack of test result of the last mini-batch
         """
         self.cur_stage = self.STAGE_TEST
         self.setup_before_stage()
 
         with torch.no_grad():
-            for batch in self.load_batch():
-                result = self.test(batch)
+            for batch_pack in self.load_batch_pack():
+                self.test(batch_pack)
                 synchronize()
-                self.update_logging_in_stage(result)
+                self.update_logging_in_stage(batch_pack)
                 synchronize()
-        return result
+        return batch_pack
 
     def setup_logging_before_stage(self):
         """ setup logging before start to train/validate/test the model. For
@@ -344,23 +347,32 @@ class TrainTask(TaskBase, ABC):
             self.progress_bars[self.cur_stage].reset(len(self.cur_dataloader))
             self.rank0_setup_logging_before_stage()
 
-    def update_logging_in_stage(self, result: dict):
+    def update_logging_in_stage(self, result: BatchPack):
         """ log the result during training/validation/testing, including
         recording the loss with `self.meter`, and call the rank0 process to do
         visualization.
 
-        :param result: dict of result for a mini-batch
+        :param result: BatchPack instance
         """
-        loss = result['loss']
-        if isinstance(loss, dict):
-            for k, v in loss.items():
+        if isinstance(result.loss, dict):
+            for k, v in result.loss.items():
                 if v is not None:
                     key = f'{self.cur_stage}/{k}-loss'
-                    self.meter.record(key, v.item())
+                    self.meter.record(
+                        tag=key, value=v.item(),
+                        weight=result.batch_size,
+                        record_op=Meter.RecordOp.APPEND,
+                        reduce_op=Meter.ReduceOp.SUM
+                    )
                     self.in_stage_meter_keys.add(key)
         else:
             key = f'{self.cur_stage}/loss'
-            self.meter.record(key, loss.item())
+            self.meter.record(
+                tag=key, value=result.loss.item(),
+                weight=result.batch_size,
+                record_op=Meter.RecordOp.APPEND,
+                reduce_op=Meter.ReduceOp.SUM
+            )
             self.in_stage_meter_keys.add(key)
         if self.is_rank0:
             self.rank0_update_logging_in_stage(result)
@@ -380,7 +392,8 @@ class TrainTask(TaskBase, ABC):
             if self.option.model.pth_path is None:
                 summary['pth_file'] = 'None'
             else:
-                summary['pth_file'] = os.path.basename(self.option.model.pth_path)
+                summary['pth_file'] = os.path.basename(
+                    self.option.model.pth_path)
 
         for key in sorted(list(self.in_stage_meter_keys)):
             if key.startswith(self.cur_stage):
@@ -388,8 +401,12 @@ class TrainTask(TaskBase, ABC):
 
         for k, v in summary.items():
             tag = f'epoch-{k}'
-            self.meter.record(tag, v)
-            log.info(__name__, f'{tag} = {v}')
+            self.meter.record(
+                tag=tag, value=v,
+                record_op=Meter.RecordOp.APPEND,
+                reduce_op=Meter.ReduceOp.STORE
+            )
+            info(__name__, f'{tag} = {v}')
 
         if self.is_rank0:
             self.rank0_update_logging_after_stage(summary)
@@ -401,18 +418,18 @@ class TrainTask(TaskBase, ABC):
         """
         pass
 
-    def rank0_update_logging_in_stage(self, result):
+    def rank0_update_logging_in_stage(self, result: BatchPack):
         """ this method should update logging only needed on the rank0 process,
         such as tensorboard logging, during a stage.
 
-        :param result: dict of result for a mini-batch
+        :param result: BatchPack that stores ground truth, prediction, loss
+            and batch size
         """
         self.progress_bars[self.cur_stage].update()
         self.progress_bars[self.cur_stage].refresh()
         if self.tboard is not None:
-            loss = result['loss']
-            if isinstance(loss, dict):
-                for k, v in result['loss'].items():
+            if isinstance(result.loss, dict):
+                for k, v in result.loss.items():
                     self.tboard.add_scalar(
                         f'batch-{self.cur_stage}/{k}-loss', v,
                         self.batch_cnt[self.cur_stage]
@@ -422,16 +439,16 @@ class TrainTask(TaskBase, ABC):
                     )
             else:
                 self.tboard.add_scalar(
-                    f'batch-{self.cur_stage}/loss', loss.item(),
+                    f'batch-{self.cur_stage}/loss', result.loss.item(),
                     self.batch_cnt[self.cur_stage]
                 )
                 self.tboard.add_scalar(
-                    f'batch/loss', loss.item(), self.batch_cnt['all']
+                    f'batch/loss', result.loss.item(), self.batch_cnt['all']
                 )
             self.batch_cnt[self.cur_stage] += 1
             self.batch_cnt['all'] += 1
 
-    def rank0_update_logging_after_stage(self, summary):
+    def rank0_update_logging_after_stage(self, summary: dict):
         """ this method should update logging only needed on the rank0
         process, such as tensorboard logging, after a stage
 

@@ -1,5 +1,13 @@
-# Copyright (c) Zhirui Dai
 import numpy as np
+
+__all__ = [
+    'multiclass_score_to_accuracy',
+    'confusion_matrix',
+    'confusion_matrix_to_recall',
+    'confusion_matrix_to_precision',
+    'confusion_matrix_to_accuracy',
+    'ConfusionMatrix'
+]
 
 
 def multiclass_score_to_accuracy(
@@ -78,6 +86,7 @@ class ConfusionMatrix:
     """ This is a helper class to calculate confusion matrix, accuracy,
     precision, recall and f1.
     """
+
     def __init__(self, pred, gt, num_classes):
         self.matrix = confusion_matrix(pred, gt, num_classes)
 

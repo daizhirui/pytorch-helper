@@ -1,9 +1,10 @@
-# Copyright (c) Zhirui Dai
 import random
 from abc import ABC
+from dataclasses import dataclass
 from typing import Any
 from typing import Optional
-from typing import Tuple
+from typing import Sequence
+from typing import Union
 
 import numpy as np
 import torch
@@ -19,7 +20,22 @@ from pytorch_helper.utils.dist import get_rank
 from pytorch_helper.utils.dist import is_distributed
 from pytorch_helper.utils.dist import reduce_value
 
-__all__ = ['TaskBase']
+__all__ = [
+    'TaskBase',
+    'BatchPack'
+]
+
+
+@dataclass
+class BatchPack:
+    gt: Any
+    batch_size: int = None
+    pred: Any = None
+    loss: Any = None
+
+    @property
+    def batch(self):
+        return self.gt
 
 
 class TaskBase(LauncherTask, ABC):
@@ -192,34 +208,24 @@ class TaskBase(LauncherTask, ABC):
 
     # model
     def model_forward_backward(
-            self, batch, backward=False
-    ) -> Tuple[Any, Any, Any, int]:
-        """ this method should define how to perform model forward and
-        backward propagation. Note that the returned values will be packed up
-        by `self.pack_up_result`.
+            self, batch_pack: BatchPack, backward=False
+    ) -> BatchPack:
+        """ This method should define how to perform model forward and
+        backward propagation, and update `batch_pack.pred`, `batch_pack.loss`,
+        `batch_pack.batch_size`. To make the loss synchronized across gpus,
+        call `self.sync_value`.
 
-        :param batch: mini-batch
+        :param batch_pack: BatchPack that stores ground truth, prediction, loss
+            and batch size
         :param backward: Bool to indicate whether to perform backward
             propagation
         :return: batch, model output, loss and batch_size
         """
         raise NotImplementedError
 
-    def pack_up_result(self, batch, model_output, loss, batch_size) -> dict:
-        """ this method packs up the input and output as a dict
-
-        :param batch: mini-batch
-        :param model_output: model output
-        :param loss: loss value
-        :param batch_size: int of mini-batch size
-        :return: dict
-        """
-        return dict(
-            gt=batch, pred=model_output, loss=self.sync_value(loss),
-            batch_size=batch_size
-        )
-
-    def freeze_and_unfreeze_modules(self, names, reset_optimizer=True):
+    def freeze_and_unfreeze_modules(
+            self, names: Union[str, Sequence[str]], reset_optimizer: bool = True
+    ):
         """ this method freezes the model and then unfreezes modules specified
         by `names`
 

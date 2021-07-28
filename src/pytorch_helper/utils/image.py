@@ -1,4 +1,3 @@
-# Copyright (c) Zhirui Dai
 from typing import List
 from typing import Sized
 from typing import Tuple
@@ -14,9 +13,9 @@ from matplotlib import pyplot as plt
 from numpy import ndarray
 from torch import Tensor
 
-from .normalize import normalize
-from .normalize import normalize_sum
-from .numpy import to_numpy
+from .array.normalize import normalize_range
+from .array.normalize import normalize_sum
+from .array.numpy import to_numpy
 
 __all__ = ['to_heatmap', 'overlay_images', 'plt_remove_margin']
 
@@ -38,7 +37,7 @@ def to_heatmap(
     if normalized:
         tmp = (np.clip(tmp, 0, 1) * 255).astype(np.uint8)
     else:
-        tmp = (normalize(tmp) * 255).astype(np.uint8)
+        tmp = (normalize_range(tmp) * 255).astype(np.uint8)
     heatmap = cv2.applyColorMap(tmp, cmap)
     heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
     heatmap = heatmap.astype(np.float32)

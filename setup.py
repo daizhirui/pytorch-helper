@@ -1,14 +1,16 @@
 import setuptools
 
+from src.pytorch_helper import __version__
 
 requires = [
     'nvidia-ml-py',
     'numpy',
     'matplotlib',
-    'torch>=1.7.0',
     'pillow',
     'opencv-python',
     'ruamel.yaml',
+    'tqdm',
+    'colorama',
     'psutil',
     'six>=1.7',
     'blessed>=1.17.1',
@@ -21,7 +23,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setuptools.setup(
     name='pytorch_helper',
-    version='0.5.2',
+    version=__version__,
     author='Zhirui Dai',
     author_email='daizhirui@hotmail.com',
     description='A package that provides a useful helper framework for PyTorch',

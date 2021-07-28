@@ -27,7 +27,8 @@ def prettify_commandline(cmdline, color_command='', color_text=''):
     assert cmdline
 
     command_p, command_b = os.path.split(cmdline[0])
-    s = color_text + os.path.join(command_p, color_command + command_b + color_text)
+    s = color_text + os.path.join(command_p,
+                                  color_command + command_b + color_text)
 
     if len(cmdline) > 1:
         s += ' '

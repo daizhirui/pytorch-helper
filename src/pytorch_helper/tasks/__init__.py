@@ -1,3 +1,3 @@
-from .base import TaskBase
-from .test import TestTask
-from .train import TrainTask
+from .base import *
+from .test import *
+from .train import *

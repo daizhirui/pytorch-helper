@@ -1,4 +1,3 @@
-# Copyright (c) Zhirui Dai
 """
 This file contains functions for gpu communication
 """
@@ -14,7 +13,7 @@ ReduceOp = getattr(pt_dist, 'ReduceOp')
 
 def is_distributed() -> bool:
     """
-    :return: True if distributed module is initialized, which means a distributed
+    :return: True if torch.distributed is initialized, which means a distributed
         multi-gpu task may be launched
     """
     return pt_dist.is_available() and pt_dist.is_initialized()

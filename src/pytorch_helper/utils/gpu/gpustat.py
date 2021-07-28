@@ -494,8 +494,8 @@ class GPUStatCollection(object):
                 processes = []
                 nv_comp_processes = nv_comp_processes or []
                 nv_graphics_processes = nv_graphics_processes or []
-                # A single process might run in both of graphics and compute mode,
-                # However we will display the process only once
+                # A single process might run in both of graphics and compute
+                # mode, However we will display the process only once
                 seen_pids = set()
                 for nv_process in nv_comp_processes + nv_graphics_processes:
                     if nv_process.pid in seen_pids:
@@ -529,12 +529,14 @@ class GPUStatCollection(object):
                 'name'                : name,
                 'temperature.gpu'     : temperature,
                 'fan.speed'           : fan_speed,
-                'utilization.gpu'     : utilization.gpu if utilization else None,
+                'utilization.gpu'     :
+                    utilization.gpu if utilization else None,
                 'utilization.enc'     :
                     utilization_enc[0] if utilization_enc else None,
                 'utilization.dec'     :
                     utilization_dec[0] if utilization_dec else None,
-                'power.draw'          : power // 1000 if power is not None else None,
+                'power.draw'          :
+                    power // 1000 if power is not None else None,
                 'enforced.power.limit': power_limit // 1000
                 if power_limit is not None else None,
                 # Convert bytes into MBytes
@@ -563,7 +565,10 @@ class GPUStatCollection(object):
             driver_version = None  # N/A
 
         try:
-            cuda_version = _decode(nvmlSystemGetCudaDriverVersion())
+            cuda_version = nvmlSystemGetCudaDriverVersion() // 10
+            main_version = cuda_version // 100
+            sub_version = cuda_version % 100
+            cuda_version = f'{main_version}.{sub_version}'
         except NVMLError as e:
             warn(__name__, str(e))
             cuda_version = None  # N/A
@@ -626,8 +631,8 @@ class GPUStatCollection(object):
                 timestr = self.query_time.strftime(time_format)
             header_template = '{t.bold_white}{hostname:{width}}{t.normal}  '
             header_template += '{timestr}  '
-            header_template += '{t.bold_black}{driver_version}{t.normal}  '
-            header_template += 'CUDA {cuda_version}'
+            header_template += '{t.bold_black}Driver:{driver_version}{t.normal}'
+            header_template += '  {t.bold_black}CUDA:{cuda_version}{t.normal}'
 
             header_msg = header_template.format(
                 hostname=self.hostname,

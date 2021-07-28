@@ -1,13 +1,15 @@
-# Copyright (c) Zhirui Dai
 import os
 from argparse import ArgumentParser
+from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Type
 from typing import TypeVar
 
-from pytorch_helper.utils import log
+from ..utils.log import info
 
 T = TypeVar('T')
+
+__all__ = ['MainArg']
 
 
 @dataclass()
@@ -25,6 +27,24 @@ class MainArg:
     boost: bool
     debug: bool
     debug_size: int
+
+    def __post_init__(self):
+        os.environ['DDP_PORT'] = str(self.ddp_port)
+        self.use_gpus.sort()
+        os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, self.use_gpus))
+        self.cuda_device_mapping = OrderedDict(enumerate(self.use_gpus))
+        self.use_gpus = list(range(len(self.use_gpus)))
+
+        os.environ['DEBUG'] = '1' if self.debug else '0'
+        os.environ['DEBUG_SIZE'] = str(self.debug_size)
+
+        import torch
+        if self.boost:
+            info(__name__, 'turn on cudnn boost')
+            cudnn = getattr(torch.backends, 'cudnn', None)
+            if cudnn:
+                cudnn.deterministic = False
+                cudnn.benchmark = True
 
     @staticmethod
     def get_parser() -> ArgumentParser:
@@ -50,7 +70,7 @@ class MainArg:
         )
         group.add_argument(
             '--use-gpus',
-            nargs='+', required=True, type=str, metavar='GPU_INDEX',
+            nargs='+', required=True, type=int, metavar='GPU_INDEX',
             help='Indices of GPUs for training')
         group.add_argument(
             '--wait-gpus',
@@ -104,32 +124,6 @@ class MainArg:
         )
         return parser
 
-    @staticmethod
-    def pre_init(args):
-        """ Adjust parsed arguments before building `MainArg` and do some setup
-        such as setting visible CUDA devices.
-
-        :param args: Namespace of arguments
-        """
-        args.use_gpus = [x.lower() for x in args.use_gpus]
-        args.use_gpus.sort(key=lambda x: int(x))
-        os.environ['DDP_PORT'] = str(args.ddp_port)
-
-        if 'cuda' in args.use_gpus:
-            args.use_gpus = [0]
-            log.warn(__name__, 'Use gpu 0 only because "cuda" is specified')
-        elif 'cpu' in args.use_gpus:
-            args.use_gpus = ['cpu']
-            log.warn(__name__, 'Use cpu only because "cpu" is specified')
-        elif len(args.use_gpus) > 1:
-            os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(args.use_gpus)
-            args.use_gpus = list(range(len(args.use_gpus)))
-        else:
-            args.use_gpus = [int(x) for x in args.use_gpus]
-
-        os.environ['DEBUG'] = '1' if args.debug else '0'
-        os.environ['DEBUG_SIZE'] = str(args.debug_size)
-
     @classmethod
     def parse(cls: Type[T]) -> T:
         """ Parse arguments from command line, build `MainArg` or its
@@ -140,26 +134,6 @@ class MainArg:
         parser = cls.get_parser()
         args = parser.parse_args()
 
-        cls.pre_init(args)
-        args = cls(**args.__dict__)
-        cls.post_init(args)
+        args = cls(**vars(args))
 
         return args
-
-    @staticmethod
-    def post_init(args):
-        """ Do some setups after building MainArg or its descendent.
-
-        :param args: MainArg or its descendent
-        """
-        from pytorch_helper.utils.gpu import wait_gpus
-        if args.wait_gpus:
-            wait_gpus(args.use_gpus)
-
-        import torch
-        if args.boost:
-            log.info(__name__, 'turn on cudnn boost')
-            cudnn = getattr(torch.backends, 'cudnn', None)
-            if cudnn:
-                cudnn.deterministic = False
-                cudnn.benchmark = True

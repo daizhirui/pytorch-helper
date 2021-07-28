@@ -5,8 +5,13 @@ import numpy as np
 from numpy import ndarray
 from torch import Tensor
 
+__all__ = [
+    'normalize_range',
+    'normalize_sum'
+]
 
-def normalize(arr: Union[ndarray, Tensor]) -> Union[ndarray, Tensor]:
+
+def normalize_range(arr: Union[ndarray, Tensor]) -> Union[ndarray, Tensor]:
     """ normalize elements in arr to [0, 1]
 
     :param arr: the matrix to normalize

@@ -1,9 +1,12 @@
-# Copyright (c) Zhirui Dai
 import os
 from typing import Callable
 from typing import Sequence
 
 from torch.distributed import init_process_group
+
+__all__ = [
+    'launch_ddp_task'
+]
 
 
 def launch_ddp_task(

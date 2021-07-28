@@ -1,4 +1,3 @@
-# Copyright (c) Zhirui Dai
 import os
 from dataclasses import dataclass
 from typing import Optional
@@ -6,10 +5,12 @@ from typing import Tuple
 
 from torch.nn.modules import Module
 
-from pytorch_helper.settings.space import Spaces
-from pytorch_helper.utils.io import load_pth
-from pytorch_helper.utils.log import info
 from .base import OptionBase
+from ..space import Spaces
+from ...utils.io import load_pth
+from ...utils.log import info
+
+__all__ = ['ModelOption']
 
 
 @dataclass()

@@ -1,4 +1,3 @@
-# Copyright (c) Zhirui Dai
 from .base import Launcher
 
 __all__ = ['Trainer']

@@ -28,6 +28,16 @@ verbose_level = VERBOSE_INFO
 if get_rank() != 0:
     verbose_level = VERBOSE_NONE
 
+__all__ = [
+    'notebook_compatible',
+    'pbar',
+    'info',
+    'warn',
+    'error',
+    'pretty_dict',
+    'get_datetime'
+]
+
 
 def notebook_compatible():
     """ setup the module to make it compatible with jupyter notebook
@@ -51,7 +61,7 @@ def pbar(iterable: Iterable = None, ncols: int = bar_len, **kwargs):
     return bar(iterable, ncols=ncols, **kwargs)
 
 
-def get_prefix(level: int, field: str) -> str:
+def _get_prefix(level: int, field: str) -> str:
     """ generate the prefix for the logging
 
     :param level: int of verbose level
@@ -80,7 +90,7 @@ def info(field: str, msg: str, **kwargs: Dict[str, Any]):
     :param kwargs: extra keyword arguments posted to `write` function
     """
     if verbose_level >= VERBOSE_INFO:
-        bar.write(get_prefix(VERBOSE_INFO, field) + msg, **kwargs)
+        bar.write(_get_prefix(VERBOSE_INFO, field) + msg, **kwargs)
 
 
 def warn(field: str, msg: str, **kwargs: Dict[str, Any]):
@@ -91,7 +101,7 @@ def warn(field: str, msg: str, **kwargs: Dict[str, Any]):
     :param kwargs: extra keyword arguments posted to `write` function
     """
     if verbose_level >= VERBOSE_WARN:
-        bar.write(get_prefix(VERBOSE_WARN, field) + msg, **kwargs)
+        bar.write(_get_prefix(VERBOSE_WARN, field) + msg, **kwargs)
 
 
 def error(field: str, msg: str, **kwargs: Dict[str, Any]):
@@ -102,7 +112,7 @@ def error(field: str, msg: str, **kwargs: Dict[str, Any]):
     :param kwargs: extra keyword arguments posted to `write` function
     """
     if verbose_level >= VERBOSE_ERROR:
-        bar.write(get_prefix(VERBOSE_ERROR, field) + msg, **kwargs)
+        bar.write(_get_prefix(VERBOSE_ERROR, field) + msg, **kwargs)
 
 
 def pretty_dict(a: dict) -> str:
@@ -130,12 +140,14 @@ def _get_device() -> str:
     """ get the str of current GPU device
     """
     device = ''
+    visible_devices = os.environ['CUDA_VISIBLE_DEVICES'].split(',')
     if is_distributed():
-        rank: int = pt_dist.get_rank()
-        real_cuda_id = os.environ['CUDA_VISIBLE_DEVICES'].split(',')[rank]
-        device = f'RANK{pt_dist.get_rank()} on CUDA{real_cuda_id}'
+        rank = pt_dist.get_rank()
+        gpu_id = visible_devices[rank]
+        device = f'RANK{rank} on GPU{gpu_id}'
     elif torch.cuda.is_available():
-        device = f'CUDA{torch.cuda.current_device()}'
+        gpu_id = visible_devices[torch.cuda.current_device()]
+        device = f'GPU{gpu_id}'
     return device
 
 

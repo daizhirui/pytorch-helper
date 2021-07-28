@@ -1,4 +1,3 @@
-# Copyright (c) Zhirui Dai
 import os
 
 from .base import Launcher

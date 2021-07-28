@@ -1,4 +1,3 @@
-# Copyright (c) Zhirui Dai
 from dataclasses import asdict
 from dataclasses import dataclass
 from typing import Type
@@ -6,7 +5,11 @@ from typing import TypeVar
 
 import ruamel.yaml as yaml
 
+from ...utils.io import save_yaml
+
 T = TypeVar('T')
+
+__all__ = ['OptionBase']
 
 
 class _Base:
@@ -56,11 +59,7 @@ class OptionBase(_Base):
         :param output_path: path to output
         :return:
         """
-        yaml_obj = yaml.YAML()
-        yaml_obj.indent(mapping=4, sequence=4)
-        option_dict = self.asdict()
-        with open(output_path, 'w') as file:
-            yaml_obj.dump(option_dict, file)
+        save_yaml(output_path, self.asdict())
 
     def __str__(self):
         """ convert self to a pretty yaml string the same as the content in the

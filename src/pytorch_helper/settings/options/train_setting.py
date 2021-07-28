@@ -1,4 +1,3 @@
-# Copyright (c) Zhirui Dai
 from dataclasses import dataclass
 from typing import List
 from typing import Optional
@@ -6,6 +5,8 @@ from typing import Union
 
 from .base import OptionBase
 from .train_routine import TrainRoutine
+
+__all__ = ['TrainSettingOption']
 
 
 @dataclass()

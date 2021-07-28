@@ -1,4 +1,3 @@
-# Copyright (c) Zhirui Dai
 import os
 from dataclasses import InitVar
 from dataclasses import dataclass
@@ -7,9 +6,6 @@ from typing import Type
 from typing import TypeVar
 from typing import Union
 
-from pytorch_helper.utils import log
-from pytorch_helper.utils.io import make_dirs
-from pytorch_helper.utils.io import make_tar_file
 from .base import OptionBase
 from .dataloader import DataloaderOption
 from .loss import LossOption
@@ -17,8 +13,15 @@ from .lr_scheduler import LRSchedulerOption
 from .model import ModelOption
 from .optimizer import OptimizerOption
 from .train_setting import TrainSettingOption
+from ...utils.io import make_dirs
+from ...utils.io import make_tar_file
+from ...utils.log import get_datetime
+from ...utils.log import info
+from ...utils.log import warn
 
 T = TypeVar('T')
+
+__all__ = ['TaskOption']
 
 
 @dataclass()
@@ -46,7 +49,7 @@ class TaskOption(OptionBase):
         self.train = for_train
 
         if 'DATASET_PATH' in os.environ and 'OUTPUT_PATH' in os.environ:
-            log.info(
+            info(
                 __name__,
                 'Setup dataset path and output path from environment variables'
             )
@@ -58,7 +61,7 @@ class TaskOption(OptionBase):
             assert self.output_path is not None, \
                 'output path is unavailable in environment or option file'
 
-            log.info(
+            info(
                 __name__,
                 'Setup dataset path and output path from option file'
             )
@@ -89,16 +92,17 @@ class TaskOption(OptionBase):
         )
 
         if self.datetime is None:
-            self.datetime = log.get_datetime()
+            self.datetime = get_datetime()
             while os.path.exists(self.output_path_tb):
-                self.datetime = log.get_datetime()
+                self.datetime = get_datetime()
 
         if for_train:
-            log.info(__name__, f'create {self.output_path_tb}')
+            info(__name__, f'create {self.output_path_tb}')
             make_dirs(self.output_path_tb)
-            log.info(__name__, f'create {self.output_path_pth}')
+            info(__name__, f'create {self.output_path_pth}')
             make_dirs(self.output_path_pth)
-            self.save_as_yaml(os.path.join(self.output_path_tb, '..', 'option.yaml'))
+            self.save_as_yaml(
+                os.path.join(self.output_path_tb, '..', 'option.yaml'))
 
             if self.src_folder:
                 dst = os.path.join(
@@ -107,7 +111,7 @@ class TaskOption(OptionBase):
                 )
                 make_tar_file(self.src_folder, dst)
             else:
-                log.warn(
+                warn(
                     __name__,
                     f'src_folder is None. Strongly recommend you to specify the'
                     f' source code folder for automatic backup.'

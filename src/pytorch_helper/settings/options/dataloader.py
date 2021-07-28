@@ -1,8 +1,9 @@
-# Copyright (c) Zhirui Dai
 from dataclasses import dataclass
 
-from pytorch_helper.settings.space import Spaces
 from .base import OptionBase
+from ..space import Spaces
+
+__all__ = ['DataloaderOption']
 
 
 @dataclass()

@@ -1,5 +1,3 @@
-# Copyright (c) Zhirui Dai
-
 import torch
 import torch.nn.modules as nn
 

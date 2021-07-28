@@ -1,5 +1,6 @@
-# Copyright (c) Zhirui Dai
 from typing import Any
+
+__all__ = ['Spaces']
 
 
 class Spaces:
@@ -127,7 +128,8 @@ class Spaces:
 
     @staticmethod
     def build(space_name: str, ref: str, *args, **kwargs) -> Any:
-        """ build an instance of class referred as `name` in the space of `space_name`
+        """ build an instance of class referred as `name` in the space of
+        `space_name`
 
         :param space_name: the name of the space to find the class
         :param ref: str to refer the class

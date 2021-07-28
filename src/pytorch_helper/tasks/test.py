@@ -1,16 +1,16 @@
-# Copyright (c) Zhirui Dai
 import os
 from abc import ABC
 
 import numpy as np
 import torch
 
-from pytorch_helper.settings.options.train_routine import TrainRoutine
-from pytorch_helper.utils import log
-from pytorch_helper.utils.dist import synchronize
-from pytorch_helper.utils.io import make_dirs
-from pytorch_helper.utils.io import save_dict_as_csv
+from .base import BatchPack
 from .train import TrainTask
+from ..settings.options.train_routine import TrainRoutine
+from ..utils import log
+from ..utils.dist import synchronize
+from ..utils.io import make_dirs
+from ..utils.io import save_dict_as_csv
 
 __all__ = ['TestTask']
 
@@ -41,9 +41,9 @@ class TestTask(TrainTask, ABC):
         )
         make_dirs(self.output_path_test)
 
-    def update_logging_in_stage(self, result):
+    def update_logging_in_stage(self, result: BatchPack):
         if self.keep_model_output:
-            model_output = result['pred']
+            model_output = result.pred
             if isinstance(model_output, dict):
                 for key, data in model_output.items():
                     if data is not None:
@@ -73,7 +73,7 @@ class TestTask(TrainTask, ABC):
             path = os.path.join(
                 self.output_path_test, f'test-summary.{self.datetime_test}.csv'
             )
-            save_dict_as_csv(summary, path)
+            save_dict_as_csv(path, summary)
         synchronize()
 
         for key, value in self.model_output_dict.items():
