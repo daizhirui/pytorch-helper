@@ -16,18 +16,18 @@ from ..log import warn
 def collect_cuda_device(cuda_id: int, mb_size: int = None) -> torch.Tensor:
     """ collect the memory of a gpu
 
-    :param cuda_id: gpu index
+    :param cuda_id: CUDA device index
     :param mb_size: int of memory size in MB to collect
     :return: torch.Tensor of the requested memory
     """
-    info(__name__, f'Collect gpu {cuda_id}')
-    device = torch.device('cuda', cuda_id)
+    info(__name__, f'Collect CUDA {cuda_id}')
+    torch.cuda.set_device(cuda_id)
     if mb_size is None:
         q = GPUStatCollection.new_query()[cuda_id]
         mb_size = q.memory_total
     MB = 1024 * 1024
     size = int(0.80 * mb_size * MB / 4)
-    block = torch.empty(size, dtype=torch.float32).to(device)
+    block = torch.empty(size, dtype=torch.float32).cuda()
     return block
 
 
