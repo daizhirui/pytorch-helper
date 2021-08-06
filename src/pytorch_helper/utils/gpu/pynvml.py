@@ -46,7 +46,10 @@ NVML_BRAND_UNKNOWN = 0
 NVML_BRAND_QUADRO = 1
 NVML_BRAND_TESLA = 2
 NVML_BRAND_NVS = 3
-NVML_BRAND_GRID = 4  # Deprecated from API reporting. Keeping definition for backward compatibility.
+
+# Deprecated from API reporting. Keeping definition for backward compatibility.
+NVML_BRAND_GRID = 4
+
 NVML_BRAND_GEFORCE = 5
 NVML_BRAND_TITAN = 6
 NVML_BRAND_NVIDIA_VAPPS = 7  # NVIDIA Virtual Applications
@@ -387,9 +390,10 @@ NVML_VALUE_NOT_AVAILABLE_ulonglong = c_ulonglong(-1)
 NVML_VALUE_NOT_AVAILABLE_uint = c_uint(-1)
 
 """
- Field Identifiers.
+Field Identifiers.
 
- All Identifiers pertain to a device. Each ID is only used once and is guaranteed never to change.
+All Identifiers pertain to a device. Each ID is only used once and is 
+guaranteed never to change.
 """
 NVML_FI_DEV_ECC_CURRENT = 1  # Current ECC mode. 1=Active. 0=Inactive
 NVML_FI_DEV_ECC_PENDING = 2  # Pending ECC mode. 1=Active. 0=Inactive
@@ -837,7 +841,7 @@ class _PrintableStructure(Structure):
     """
     Abstract class that produces nicer __str__ output than ctypes.Structure.
     e.g. instead of:
-      >>> print str(obj)
+      >> print str(obj)
       <class_name object at 0x7fdf82fef9e0>
     this class will print
       class_name(field_name: formatted_value, field_name: formatted_value)
@@ -846,13 +850,14 @@ class _PrintableStructure(Structure):
     e.g. class that has _field_ 'hex_value', c_uint could be formatted with
       _fmt_ = {"hex_value" : "%08X"}
     to produce nicer output.
-    Default fomratting string for all fields can be set with key "<default>" like:
+    Default formatting string for all fields can be set with key "<default>" like:
       _fmt_ = {"<default>" : "%d MHz"} # e.g all values are numbers in MHz.
     If not set it's assumed to be just "%s"
 
     Exact format of returned str from this class is subject to change in the future.
     """
     _fmt_ = {}
+    _fields_ = []  # Attributes that should be defined for `ctypes.Structure`
 
     def __str__(self):
         result = []
@@ -865,7 +870,7 @@ class _PrintableStructure(Structure):
             elif "<default>" in self._fmt_:
                 fmt = self._fmt_["<default>"]
             result.append(("%s: " + fmt) % (key, value))
-        return self.__class__.__name__ + "(" + ", ".join(result) + ")"
+        return type(self).__name__ + "(" + ", ".join(result) + ")"
 
 
 class c_nvmlUnitInfo_t(_PrintableStructure):
@@ -1223,7 +1228,8 @@ nvmlEventTypeAll = (
 # Clock Throttle Reasons defines
 nvmlClocksThrottleReasonGpuIdle = 0x0000000000000001
 nvmlClocksThrottleReasonApplicationsClocksSetting = 0x0000000000000002
-nvmlClocksThrottleReasonUserDefinedClocks = nvmlClocksThrottleReasonApplicationsClocksSetting  # deprecated, use nvmlClocksThrottleReasonApplicationsClocksSetting
+# deprecated, use nvmlClocksThrottleReasonApplicationsClocksSetting
+nvmlClocksThrottleReasonUserDefinedClocks = nvmlClocksThrottleReasonApplicationsClocksSetting
 nvmlClocksThrottleReasonSwPowerCap = 0x0000000000000004
 nvmlClocksThrottleReasonHwSlowdown = 0x0000000000000008
 nvmlClocksThrottleReasonSyncBoost = 0x0000000000000010
@@ -1301,14 +1307,16 @@ class c_nvmlVgpuPgpuMetadata_t(Structure):
                 ("hostSupportedVgpuRange", c_nvmlVgpuVersion_t),
                 ("opaqueDataSize", c_uint),
                 (
-                "opaqueData", c_char * NVML_VGPU_PGPU_METADATA_OPAQUE_DATA_SIZE)
+                    "opaqueData",
+                    c_char * NVML_VGPU_PGPU_METADATA_OPAQUE_DATA_SIZE)
                 ]
 
 
 class c_nvmlVgpuPgpuCompatibility_t(Structure):
     _fields_ = [("vgpuVmCompatibility", _nvmlVgpuVmCompatibility_t),
                 (
-                "compatibilityLimitCode", _nvmlVgpuPgpuCompatibilityLimitCode_t)
+                    "compatibilityLimitCode",
+                    _nvmlVgpuPgpuCompatibilityLimitCode_t)
                 ]
 
 
@@ -1587,7 +1595,6 @@ def nvmlSystemGetDriverVersion():
 # Added in 2.285
 def nvmlSystemGetHicVersion():
     c_count = c_uint(0)
-    hics = None
     fn = _nvmlGetFunctionPointer("nvmlSystemGetHicVersion")
 
     # get the count
@@ -2323,7 +2330,7 @@ def nvmlDeviceGetComputeRunningProcesses_v2(handle):
         return []
     elif ret == NVML_ERROR_INSUFFICIENT_SIZE:
         # typical case
-        # oversize the array incase more processes are created
+        # oversize the array in case more processes are created
         c_count.value = c_count.value * 2 + 5
         proc_array = c_nvmlProcessInfo_t * c_count.value
         c_procs = proc_array()

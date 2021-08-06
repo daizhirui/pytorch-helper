@@ -2,8 +2,9 @@
 This file contains functions for waiting gpus to be ready when there are other
 processes using the requested gpus.
 """
-
+import os
 import time
+from typing import List
 
 import torch
 
@@ -11,6 +12,16 @@ from .gpustat import GPUStatCollection
 from ..dist import synchronize
 from ..log import info
 from ..log import warn
+
+__all__ = [
+    'set_cuda_visible_devices',
+    'collect_cuda_device',
+    'wait_gpus'
+]
+
+
+def set_cuda_visible_devices(gpus: List[int]):
+    os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, gpus))
 
 
 def collect_cuda_device(cuda_id: int, mb_size: int = None) -> torch.Tensor:

@@ -140,14 +140,17 @@ def _get_device() -> str:
     """ get the str of current GPU device
     """
     device = ''
-    visible_devices = os.environ['CUDA_VISIBLE_DEVICES'].split(',')
-    if is_distributed():
-        rank = pt_dist.get_rank()
-        gpu_id = visible_devices[rank]
-        device = f'RANK{rank} on GPU{gpu_id}'
-    elif torch.cuda.is_available():
-        gpu_id = visible_devices[torch.cuda.current_device()]
-        device = f'GPU{gpu_id}'
+    try:
+        visible_devices = os.environ['CUDA_VISIBLE_DEVICES'].split(',')
+        if is_distributed():
+            rank = pt_dist.get_rank()
+            gpu_id = visible_devices[rank]
+            device = f'RANK{rank} on GPU{gpu_id}'
+        elif torch.cuda.is_available():
+            gpu_id = visible_devices[torch.cuda.current_device()]
+            device = f'GPU{gpu_id}'
+    except KeyError:
+        device = f'GPU{torch.cuda.current_device()}'
     return device
 
 

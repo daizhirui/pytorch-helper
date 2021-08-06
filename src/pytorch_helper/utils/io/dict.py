@@ -26,10 +26,11 @@ def save_dict_as_csv(path: str, a: OrderedDict, append: bool = False):
         new_csv = False
         with open(path, 'r') as file:
             old_fieldnames = file.readline().strip().split(',')
-            diff = set(fieldnames).difference(old_fieldnames)
-            if len(diff) > 0:
-                new_csv = True
-                fieldnames += sorted(list(diff))
+            for fieldname in fieldnames:
+                if fieldname not in old_fieldnames:
+                    old_fieldnames.append(fieldname)
+                    new_csv = True
+            fieldnames = old_fieldnames
     else:
         fieldnames = list(a.keys())
 

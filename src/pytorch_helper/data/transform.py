@@ -1,6 +1,8 @@
 import torch
 import torch.nn.modules as nn
 
+__all__ = ['DeNormalize']
+
 
 class DeNormalize(nn.Module):
     def __init__(self, mean, std, inplace=False):

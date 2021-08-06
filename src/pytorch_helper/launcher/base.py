@@ -45,7 +45,7 @@ class LauncherTask:
 
 def run_task(
         cuda_ids: List[int], main_args: MainArg, task_option: TaskOption,
-        register_func: Callable, *args
+        register_func: Callable
 ):
     """ default function used to run the task
 
@@ -54,8 +54,6 @@ def run_task(
     :param task_option: TaskOption used to build the task
     :param register_func: Callable to setup `settings.space.Spaces`, used
             before building the task
-    :param args: extra args
-    :return:
     """
     if main_args.wait_gpus:
         from ..utils.gpu.wait_gpus import wait_gpus
@@ -146,7 +144,7 @@ class Launcher:
         :param run_task_func: Callable to run the task
         :param run_task_func_args: arguments for `run_task_func`:
             (gpus: Sequence[int], main_args, task_option: TaskOption,
-            register_func: Callable, *args)
+            register_func: Callable)
         """
         if run_task_func is None:
             run_task_func = run_task
@@ -164,5 +162,5 @@ class Launcher:
         else:
             run_task_func(
                 self.args.use_gpus, self.args, self.task_option,
-                self.register_func, *run_task_func_args
+                self.register_func,
             )

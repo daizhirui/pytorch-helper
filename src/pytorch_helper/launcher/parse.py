@@ -6,6 +6,7 @@ from typing import Type
 from typing import TypeVar
 from typing import Union
 
+from ..utils.gpu.wait_gpus import set_cuda_visible_devices
 from ..utils.log import info
 
 T = TypeVar('T')
@@ -26,6 +27,7 @@ class MainArg:
     ddp_port: int
     use_data_parallel: bool
     boost: bool
+    img_ext: str
     debug: bool
     debug_size: int
 
@@ -44,7 +46,7 @@ class MainArg:
             self.use_gpus.sort()
             self.cuda_device_mapping = None
             self.wait_gpus = False
-        os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, self.use_gpus))
+        set_cuda_visible_devices(self.use_gpus)
         self.use_gpus = list(range(len(self.use_gpus)))
 
         os.environ['DEBUG'] = '1' if self.debug else '0'
@@ -58,23 +60,24 @@ class MainArg:
                 cudnn.deterministic = False
                 cudnn.benchmark = True
 
+        from pytorch_helper.utils import io
+        io.config['img_ext'] = self.img_ext
+
     @staticmethod
     def get_parser() -> ArgumentParser:
         """ Construct a ArgumentParser
 
         :return: ArgumentParser to parse arguments
         """
-        parser = ArgumentParser('PyTorch-Helper Argument Parser')
+        parser = ArgumentParser()
         group = parser.add_argument_group(
             'Option File arguments', 'Specify path to option files'
         )
         group.add_argument(
-            '--task-option-file',
-            type=str,
+            '--task-option-file', type=str,
             help='Path to the file of training options')
         group.add_argument(
-            '--test-option-file',
-            type=str,
+            '--test-option-file', type=str,
             help='Path to the file of extra options for testing')
 
         group = parser.add_argument_group(
@@ -85,8 +88,7 @@ class MainArg:
             nargs='+', required=True, type=int, metavar='GPU_INDEX',
             help='Indices of GPUs for training')
         group.add_argument(
-            '--wait-gpus',
-            nargs='+', default=[], type=int, metavar='GPU_INDEX',
+            '--wait-gpus', nargs='+', default=[], type=int, metavar='GPU_INDEX',
             help='NVIDIA-SMI Indices of GPUs specified by --use-gpus to wait. '
                  'Note that these indices may be different from the ones '
                  'posted to --use-gpus if NVIDIA-SMI presents an abnormal '
@@ -95,13 +97,11 @@ class MainArg:
                  'deal with it correctly if you post the correct mapping by '
                  '"--use-gpus 8 --wait-gpus 4".')
         group.add_argument(
-            '--boost',
-            action='store_true',
+            '--boost', action='store_true',
             help='Turn on cudnn boost')
         group = group.add_mutually_exclusive_group()
         group.add_argument(
-            '--ddp-port',
-            default=23456, type=int,
+            '--ddp-port', default=23456, type=int,
             help='Port used for DistributedDataParallel, default: 23456')
         group.add_argument(
             '--use-data-parallel',
@@ -112,8 +112,7 @@ class MainArg:
             'Resume Setting arguments', 'Specify resume settings'
         )
         group.add_argument(
-            '--pth-path', '--pth-file',
-            type=str,
+            '--pth-path', '--pth-file', type=str,
             help="Path to the pt file to resume training")
         group.add_argument(
             '--resume', action='store_true',
@@ -121,22 +120,29 @@ class MainArg:
         )
 
         group = parser.add_argument_group(
-            'Path Setting arguments', 'Specify path settings'
+            'IO Setting arguments', 'Specify input output settings'
         )
         group.add_argument(
-            '--dataset-path',
-            type=str,
-            help='Path to the dataset')
+            '--dataset-path', type=str,
+            help='Path to the dataset'
+        )
         group.add_argument(
-            '--output-path',
-            type=str,
-            help='Path to save the training')
+            '--output-path', type=str,
+            help='Path to save the training'
+        )
+        group.add_argument(
+            '--img-ext', type=str, default='png',
+            help='File extension of saved images'
+        )
 
-        parser.add_argument(
+        group = parser.add_argument_group(
+            'Debug Setting arguments', 'Specify debug settings'
+        )
+        group.add_argument(
             '--debug',
             action='store_true',
             help='If used, set environment variable DEBUG=1')
-        parser.add_argument(
+        group.add_argument(
             '--debug-size', default=32,
             help='Number of samples in each stage dataset for debug'
         )

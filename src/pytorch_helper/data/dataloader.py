@@ -5,6 +5,8 @@ from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.dataset import Dataset
 from torch.utils.data.distributed import DistributedSampler
 
+__all__ = ['DataLoaderGenerator']
+
 
 class DataLoaderGenerator:
     STAGE_TRAIN = 'train'
@@ -14,7 +16,7 @@ class DataLoaderGenerator:
 
     def __init__(
             self, batch_size: int, num_workers: int, pin_memory: bool,
-            use_ddp: bool, *args, **kwargs
+            use_ddp: bool
     ):
         """ DataLoaderGenerator is an abstract class designed for single-gpu and
         multi-gpu training, validation and testing.
@@ -26,8 +28,6 @@ class DataLoaderGenerator:
         https://developer.nvidia.com/blog/how-optimize-data-transfers-cuda-cc/
             for more details
         :param use_ddp: whether to use `nn.parallel.DistributedDataParallel`
-        :param args: extra args
-        :param kwargs: extra keyword args
         """
         self.batch_size = batch_size
         self.num_workers = num_workers

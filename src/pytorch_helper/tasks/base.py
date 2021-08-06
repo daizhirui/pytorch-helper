@@ -174,13 +174,13 @@ class TaskBase(LauncherTask, ABC):
             return
         if key in state_dict:
             state_dict = state_dict[key]
-        if state_dict is None:
-            return
-        if len(state_dict) > 0:
-            try:
-                obj.load_state_dict(state_dict)
-            except Exception as e:
-                log.warn(__name__, repr(e))
+            if state_dict is None:
+                return
+            if len(state_dict) > 0:
+                try:
+                    obj.load_state_dict(state_dict)
+                except Exception as e:
+                    log.warn(__name__, repr(e))
 
     @staticmethod
     def get_state(obj) -> Optional[dict]:

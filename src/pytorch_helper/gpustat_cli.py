@@ -1,6 +1,6 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+# from __future__ import absolute_import
+# from __future__ import division
+# from __future__ import print_function
 
 import os
 import sys
@@ -67,7 +67,7 @@ def main(*argv):
     try:  # sigpipe not available under windows. just ignore in this case
         import signal
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)
-    except Exception as e:
+    except AttributeError:
         pass
     # arguments to gpustat
     import argparse
@@ -119,7 +119,7 @@ def main(*argv):
     )
     parser.add_argument(
         '--debug', action='store_true', default=False,
-        help='Allow to print additional informations for debugging.'
+        help='Allow to print additional information for debugging.'
     )
     parser.add_argument('-v', '--version', action='version',
                         version=('gpustat %s' % __version__))

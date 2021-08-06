@@ -34,12 +34,15 @@ class TestTask(TrainTask, ABC):
                 self.STAGE_TEST: log.pbar(position=0, desc=' Test')
             }
 
-        epoch = 'NA'
-        if state_dict:
-            epoch = state_dict.get('epoch', 'NA')
-        self.output_path_test = os.path.join(
-            self.option.output_path_pth, f'test-epoch-{epoch}'
-        )
+        self.epoch = state_dict.get('epoch', -1)
+        pth_name = os.path.basename(self.option.model.pth_path)
+        if pth_name is None:
+            pth_name = 'None'
+        else:
+            pth_name = os.path.splitext(pth_name)[0]
+        self.output_path_test = os.path.realpath(os.path.join(
+            self.option.output_path_pth, '..', 'test', pth_name
+        ))
         make_dirs(self.output_path_test)
 
     def update_logging_in_stage(self, result: BatchPack):
@@ -71,9 +74,7 @@ class TestTask(TrainTask, ABC):
         self._test()
         summary = self.summarize_logging_after_stage()
         if self.is_rank0:
-            path = os.path.join(
-                self.output_path_test, f'test-summary.{self.datetime_test}.csv'
-            )
+            path = os.path.join(self.output_path_test, 'test-summary.csv')
             save_dict_as_csv(path, summary)
         synchronize()
 

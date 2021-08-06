@@ -12,6 +12,8 @@ requires = [
     'tqdm',
     'colorama',
     'psutil',
+    'tensorboard',
+    'tensorboardX',
     'six>=1.7',
     'blessed>=1.17.1',
     'setuptools',

@@ -70,11 +70,14 @@ class TaskOption(OptionBase):
                 raise FileNotFoundError(
                     f'dataset path: {self.dataset_path} does not exist'
                 )
-            if not os.path.isdir(self.output_path):
-                raise NotADirectoryError(
-                    f'output path: {self.output_path} does not exist or '
-                    f'is not a folder'
-                )
+            if os.path.exists(self.output_path):
+                if not os.path.isdir(self.output_path):
+                    raise NotADirectoryError(
+                        f'output path: {self.output_path} does not exist or '
+                        f'is not a folder'
+                    )
+            else:
+                make_dirs(self.output_path)
 
         if isinstance(self.dataloader, dict):
             self.dataloader['kwargs']['root'] = self.dataset_path
