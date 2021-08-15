@@ -34,14 +34,12 @@ class TestTask(TrainTask, ABC):
                 self.STAGE_TEST: log.pbar(position=0, desc=' Test')
             }
 
-        self.epoch = state_dict.get('epoch', -1)
-        pth_name = os.path.basename(self.option.model.pth_path)
-        if pth_name is None:
-            pth_name = 'None'
-        else:
-            pth_name = os.path.splitext(pth_name)[0]
+        self.epoch = -1
+        if state_dict is not None:
+            self.epoch = state_dict.get('epoch', -1)
+
         self.output_path_test = os.path.realpath(os.path.join(
-            self.option.output_path_pth, '..', 'test', pth_name
+            self.option.output_path_pth, '..', 'test'
         ))
         make_dirs(self.output_path_test)
 
