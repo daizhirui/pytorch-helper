@@ -1,6 +1,6 @@
 import os
 from abc import ABC
-from typing import OrderedDict
+from collections import OrderedDict
 
 import numpy as np
 import torch
@@ -82,7 +82,7 @@ class TestTask(TrainTask, ABC):
         return summary
 
     def summarize_logging_after_stage(self) -> OrderedDict:
-        summary = super(TestTask, self).summarize_logging_after_stage()
+        summary = OrderedDict()
         summary['name'] = self.option.name
         summary['datetime'] = self.option.datetime
         summary['epoch'] = self.epoch
@@ -91,4 +91,5 @@ class TestTask(TrainTask, ABC):
         else:
             summary['pth_file'] = os.path.basename(
                 self.option.model.pth_path)
+        summary.update(super(TestTask, self).summarize_logging_after_stage())
         return summary
