@@ -134,15 +134,19 @@ class TaskOption(OptionBase):
             return option_dict
 
     @property
+    def output_path_task(self):
+        return os.path.join(self.output_path, self.name, self.datetime)
+
+    @property
     def output_path_pth(self) -> str:
         """
         :return: the path of the checkpoint folder
         """
-        return os.path.join(self.output_path, self.name, self.datetime, 'pth')
+        return os.path.join(self.output_path_task, 'pth')
 
     @property
     def output_path_tb(self) -> str:
         """
         :return: the path of tensorboard folder
         """
-        return os.path.join(self.output_path, self.name, self.datetime, 'tb')
+        return os.path.join(self.output_path_task, 'tb')
