@@ -150,7 +150,10 @@ def _get_device() -> str:
             gpu_id = visible_devices[torch.cuda.current_device()]
             device = f'GPU{gpu_id}'
     except KeyError:
-        device = f'GPU{torch.cuda.current_device()}'
+        if torch.cuda.is_available():
+            device = f'GPU{torch.cuda.current_device()}'
+        else:
+            device = 'CPU'
     return device
 
 
