@@ -21,9 +21,9 @@ __all__ = ['to_heatmap', 'overlay_images', 'plt_remove_margin']
 
 
 def to_heatmap(
-        arr: Union[ndarray, Tensor],
-        normalized=False,
-        cmap=cv2.COLORMAP_JET
+    arr: Union[ndarray, Tensor],
+    normalized=False,
+    cmap=cv2.COLORMAP_JET
 ) -> Union[ndarray, Tensor]:
     """ convert arr to a heatmap with specified cmap.
 
@@ -47,8 +47,8 @@ def to_heatmap(
 
 
 def overlay_images(
-        images: List[Union[ndarray, Tensor]],
-        weights: Union[float, List[float], Tuple[float]]
+    images: List[Union[ndarray, Tensor]],
+    weights: Union[float, List[float], Tuple[float]]
 ) -> Union[ndarray, Tensor]:
     """ Overlay images together with the specified weights.
 

@@ -2,9 +2,11 @@ from dataclasses import dataclass
 from typing import Union
 
 from .base import OptionBase
-from ...utils.log import info
+from ...utils.log import get_logger
 
 __all__ = ['TrainRoutine']
+
+logger = get_logger(__name__)
 
 
 @dataclass()
@@ -35,7 +37,7 @@ class TrainRoutine(OptionBase):
         self.new_routine = False
         if self.init_lr is None:
             return False
-        info(__name__, f'set init-lr to {self.init_lr} for new routine')
+        logger.info(f'set init-lr to {self.init_lr} for new routine')
         for param_group in optimizer.param_groups:
             param_group['lr'] = self.init_lr
             param_group['init_lr'] = self.init_lr

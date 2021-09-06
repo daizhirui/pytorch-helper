@@ -57,9 +57,9 @@ def synchronize():
 
 
 def reduce_value(
-        input_value: Union[torch.Tensor, Dict[Hashable, torch.Tensor]],
-        rank0_only: bool = False, average: bool = True,
-        op=ReduceOp.SUM
+    input_value: Union[torch.Tensor, Dict[Hashable, torch.Tensor]],
+    rank0_only: bool = False, average: bool = True,
+    op=ReduceOp.SUM
 ) -> Union[torch.Tensor, Dict[Hashable, torch.Tensor]]:
     """ Reduce the values in ``input_dict`` with operation ``op``.
 

@@ -15,15 +15,17 @@ from torch.nn.parallel import DistributedDataParallel
 
 from pytorch_helper.launcher.base import LauncherTask
 from pytorch_helper.settings.options import TaskOption
-from pytorch_helper.utils import log
 from pytorch_helper.utils.dist import get_rank
 from pytorch_helper.utils.dist import is_distributed
 from pytorch_helper.utils.dist import reduce_value
+from pytorch_helper.utils.log import get_logger
 
 __all__ = [
     'TaskBase',
     'BatchPack'
 ]
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -86,22 +88,17 @@ class TaskBase(LauncherTask, ABC):
                     f'for {n_gpus} GPUs.'
                 )
 
-        log.info(__name__, f'Start task: {self.option.name}')
-        log.info(__name__, f'Datetime: {self.option.datetime}')
+        logger.info(f'Start task: {self.option.name}')
+        logger.info(f'Datetime: {self.option.datetime}')
 
         if self.is_parallel:
             if self.is_distributed:
-                log.info(
-                    __name__, f'DDP Process {distributed.get_rank()} online'
-                )
+                logger.info(f'DDP Process {distributed.get_rank()} online')
             else:
-                log.info(
-                    __name__, f'Using {n_gpus} GPUs: {gpu_ids} for DataParallel'
-                )
+                logger.info(f'Using {n_gpus} GPUs: {gpu_ids} for DataParallel')
                 batch_size = self.option.dataloader.kwargs['batch_size']
                 if batch_size % n_gpus != 0:
-                    log.warn(
-                        __name__,
+                    logger.warn(
                         f'batch size {batch_size} cannot be distributed onto '
                         f'{n_gpus} GPUs evenly!'
                     )
@@ -112,9 +109,7 @@ class TaskBase(LauncherTask, ABC):
         # unwrapped model
         if self.is_parallel:
             if self.is_distributed:
-                log.info(
-                    __name__, 'Using DDP, convert BatchNorm to SyncBatchNorm'
-                )
+                logger.info('Using DDP, convert BatchNorm to SyncBatchNorm')
                 self.model = nn.SyncBatchNorm.convert_sync_batchnorm(self.model)
                 self.model = DistributedDataParallel(
                     module=self.model,
@@ -180,7 +175,7 @@ class TaskBase(LauncherTask, ABC):
                 try:
                     obj.load_state_dict(state_dict)
                 except Exception as e:
-                    log.warn(__name__, repr(e))
+                    logger.warn(repr(e))
 
     @staticmethod
     def get_state(obj) -> Optional[dict]:
@@ -208,7 +203,7 @@ class TaskBase(LauncherTask, ABC):
 
     # model
     def model_forward_backward(
-            self, batch_pack: BatchPack, backward=False
+        self, batch_pack: BatchPack, backward=False
     ) -> BatchPack:
         """ This method should define how to perform model forward and
         backward propagation, and update `batch_pack.pred`, `batch_pack.loss`,
@@ -224,7 +219,7 @@ class TaskBase(LauncherTask, ABC):
         raise NotImplementedError
 
     def freeze_and_unfreeze_modules(
-            self, names: Union[str, Sequence[str]], reset_optimizer: bool = True
+        self, names: Union[str, Sequence[str]], reset_optimizer: bool = True
     ):
         """ this method freezes the model and then unfreezes modules specified
         by `names`
@@ -237,7 +232,7 @@ class TaskBase(LauncherTask, ABC):
         for parameter in self.unwrapped_model.parameters():
             parameter.requires_grad = False
         for name in names:
-            log.info(__name__, f"train {name}")
+            logger.info(f"train {name}")
             name = name.split('.')
             module = self.unwrapped_model
             for n in name:
@@ -247,18 +242,18 @@ class TaskBase(LauncherTask, ABC):
                 parameter.requires_grad = True
         if reset_optimizer:
             if not hasattr(self, 'optimizer'):
-                log.warn(__name__, 'no optimizer to reset')
+                logger.warn('no optimizer to reset')
                 return
 
             lr = self.learning_rate
             self.optimizer = self.option.optimizer.build(self.unwrapped_model)
             self.set_learning_rate(lr)
-            log.info(__name__, 'optimizer reset')
+            logger.info('optimizer reset')
 
             if not hasattr(self, 'lr_scheduler'):
                 return
             self.lr_scheduler = self.option.lr_scheduler.build(self.optimizer)
-            log.info(__name__, 'lr scheduler reset')
+            logger.info('lr scheduler reset')
 
     @staticmethod
     def sync_value(input_value):
@@ -330,6 +325,4 @@ class TaskBase(LauncherTask, ABC):
             if key in rng_state:
                 set_state_fn(rng_state[key])
             else:
-                log.warn(
-                    __name__, f'random state for {key} is missing!'
-                )
+                logger.warn(f'random state for {key} is missing!')

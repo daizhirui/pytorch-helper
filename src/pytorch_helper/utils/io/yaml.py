@@ -1,12 +1,14 @@
 from ruamel import yaml
 
 from .make_dirs import make_dirs_for_file
-from ..log import info
+from ..log import get_logger
 
 __all__ = [
     'load_yaml',
     'save_yaml'
 ]
+
+logger = get_logger(__name__)
 
 
 def load_yaml(path: str) -> dict:
@@ -15,7 +17,7 @@ def load_yaml(path: str) -> dict:
     :param path: str of the path of the yaml file
     :return: dict of the yaml file
     """
-    info(__name__, f'Load from {path}')
+    logger.info(f'Load from {path}')
     with open(path, 'r') as file:
         yaml_dict = yaml.safe_load(file)
     return yaml_dict
@@ -33,4 +35,4 @@ def save_yaml(path: str, a: dict):
     yaml_obj.indent(mapping=4, sequence=4)
     with open(path, 'w') as file:
         yaml_obj.dump(a, file)
-    info(__name__, f'Save {path}')
+    logger.info(f'Save {path}')

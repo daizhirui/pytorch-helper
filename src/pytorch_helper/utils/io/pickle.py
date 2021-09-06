@@ -2,12 +2,14 @@ import pickle
 from typing import Any
 
 from .make_dirs import make_dirs_for_file
-from ..log import info
+from ..log import get_logger
 
 __all__ = [
     'save_as_pickle',
     'load_from_pickle'
 ]
+
+logger = get_logger(__name__)
 
 
 def save_as_pickle(path: str, result: Any):
@@ -19,7 +21,7 @@ def save_as_pickle(path: str, result: Any):
     make_dirs_for_file(path)
     with open(path, 'wb') as f:
         pickle.dump(result, f)
-    info(__name__, f'Save {path}')
+    logger.info(f'Save {path}')
 
 
 def load_from_pickle(path: str):
@@ -27,6 +29,6 @@ def load_from_pickle(path: str):
 
     :param path: str of the path of the pickle file
     """
-    info(__name__, f'Load from {path}')
+    logger.info(f'Load from {path}')
     with open(path, 'rb') as f:
         return pickle.load(f)

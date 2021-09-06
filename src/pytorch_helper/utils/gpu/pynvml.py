@@ -1215,14 +1215,14 @@ nvmlEventTypePowerSourceChange = 0x0000000000000080
 nvmlEventMigConfigChange = 0x0000000000000100
 nvmlEventTypeNone = 0x0000000000000000
 nvmlEventTypeAll = (
-        nvmlEventTypeNone
-        | nvmlEventTypeSingleBitEccError
-        | nvmlEventTypeDoubleBitEccError
-        | nvmlEventTypePState
-        | nvmlEventTypeClock
-        | nvmlEventTypePowerSourceChange
-        | nvmlEventTypeXidCriticalError
-        | nvmlEventMigConfigChange
+    nvmlEventTypeNone
+    | nvmlEventTypeSingleBitEccError
+    | nvmlEventTypeDoubleBitEccError
+    | nvmlEventTypePState
+    | nvmlEventTypeClock
+    | nvmlEventTypePowerSourceChange
+    | nvmlEventTypeXidCriticalError
+    | nvmlEventMigConfigChange
 )
 
 # Clock Throttle Reasons defines
@@ -1239,16 +1239,16 @@ nvmlClocksThrottleReasonHwPowerBrakeSlowdown = 0x0000000000000080
 nvmlClocksThrottleReasonDisplayClockSetting = 0x0000000000000100
 nvmlClocksThrottleReasonNone = 0x0000000000000000
 nvmlClocksThrottleReasonAll = (
-        nvmlClocksThrottleReasonNone |
-        nvmlClocksThrottleReasonGpuIdle |
-        nvmlClocksThrottleReasonApplicationsClocksSetting |
-        nvmlClocksThrottleReasonSwPowerCap |
-        nvmlClocksThrottleReasonHwSlowdown |
-        nvmlClocksThrottleReasonSyncBoost |
-        nvmlClocksThrottleReasonSwThermalSlowdown |
-        nvmlClocksThrottleReasonHwThermalSlowdown |
-        nvmlClocksThrottleReasonHwPowerBrakeSlowdown |
-        nvmlClocksThrottleReasonDisplayClockSetting
+    nvmlClocksThrottleReasonNone |
+    nvmlClocksThrottleReasonGpuIdle |
+    nvmlClocksThrottleReasonApplicationsClocksSetting |
+    nvmlClocksThrottleReasonSwPowerCap |
+    nvmlClocksThrottleReasonHwSlowdown |
+    nvmlClocksThrottleReasonSyncBoost |
+    nvmlClocksThrottleReasonSwThermalSlowdown |
+    nvmlClocksThrottleReasonHwThermalSlowdown |
+    nvmlClocksThrottleReasonHwPowerBrakeSlowdown |
+    nvmlClocksThrottleReasonDisplayClockSetting
 )
 
 
@@ -1602,7 +1602,7 @@ def nvmlSystemGetHicVersion():
 
     # this should only fail with insufficient size
     if ((ret != NVML_SUCCESS) and
-            (ret != NVML_ERROR_INSUFFICIENT_SIZE)):
+        (ret != NVML_ERROR_INSUFFICIENT_SIZE)):
         raise NVMLError(ret)
 
     # If there are no hics
@@ -2703,7 +2703,7 @@ def nvmlDeviceGetRetiredPages(device, sourceFilter):
 
     # this should only fail with insufficient size
     if ((ret != NVML_SUCCESS) and
-            (ret != NVML_ERROR_INSUFFICIENT_SIZE)):
+        (ret != NVML_ERROR_INSUFFICIENT_SIZE)):
         raise NVMLError(ret)
 
     # call again with a buffer
@@ -2727,7 +2727,7 @@ def nvmlDeviceGetRetiredPages_v2(device, sourceFilter):
 
     # this should only fail with insufficient size
     if ((ret != NVML_SUCCESS) and
-            (ret != NVML_ERROR_INSUFFICIENT_SIZE)):
+        (ret != NVML_ERROR_INSUFFICIENT_SIZE)):
         raise NVMLError(ret)
 
     # call again with a buffer

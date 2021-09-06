@@ -2,11 +2,12 @@ import os.path
 import tarfile
 from typing import Callable
 
-from ..log import info
+from ..log import get_logger
 
 __all__ = [
     'make_tar_file'
 ]
+logger = get_logger(__name__)
 
 
 def make_tar_file(src: str, dst: str, include: Callable = None):
@@ -18,4 +19,4 @@ def make_tar_file(src: str, dst: str, include: Callable = None):
     """
     with tarfile.open(dst, 'w:gz') as file:
         file.add(src, arcname=os.path.basename(src), filter=include)
-    info(__name__, f'Save {dst}')
+    logger.info(f'Save {dst}')

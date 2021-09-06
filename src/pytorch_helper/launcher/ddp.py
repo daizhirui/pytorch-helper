@@ -10,8 +10,8 @@ __all__ = [
 
 
 def launch_ddp_task(
-        gpu_id: Sequence[int], n_gpus: int, run_task_func: Callable,
-        *run_task_arg
+    gpu_id: Sequence[int], n_gpus: int, run_task_func: Callable,
+    *run_task_arg
 ):
     """ default function used to launch a DistributedDataParallel process
 

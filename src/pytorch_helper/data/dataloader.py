@@ -15,8 +15,8 @@ class DataLoaderGenerator:
     STAGE_ALL = 'all'
 
     def __init__(
-            self, batch_size: int, num_workers: int, pin_memory: bool,
-            use_ddp: bool
+        self, batch_size: int, num_workers: int, pin_memory: bool,
+        use_ddp: bool
     ):
         """ DataLoaderGenerator is an abstract class designed for single-gpu and
         multi-gpu training, validation and testing.
@@ -76,7 +76,7 @@ class DataLoaderGenerator:
         raise NotImplementedError
 
     def build_dataloader(
-            self, dataset: Dataset, shuffle: bool
+        self, dataset: Dataset, shuffle: bool
     ) -> Tuple[DataLoader, Optional[DistributedSampler]]:
         """ This method builds the dataloader and the distributed sampler if
         `self.use_ddp` is True.

@@ -159,8 +159,8 @@ class Meter(object):
         #         self._delete_tag(t)
 
     def record(
-            self, tag: str, value: Any, weight=1, record_op: RecordOp = None,
-            reduce_op: ReduceOp = None
+        self, tag: str, value: Any, weight=1, record_op: RecordOp = None,
+        reduce_op: ReduceOp = None
     ):
         if tag not in self.meter_items:
             assert record_op is not None, \

@@ -10,13 +10,15 @@ from ..utils.dist import is_distributed
 from ..utils.dist import is_rank0
 from ..utils.dist import synchronize
 from ..utils.io import load_yaml
-from ..utils.log import info
+from ..utils.log import get_logger
 
 __all__ = [
     'LauncherTask',
     'Launcher',
     'run_task'
 ]
+
+logger = get_logger(__name__)
 
 
 class LauncherTask:
@@ -44,8 +46,8 @@ class LauncherTask:
 
 
 def run_task(
-        cuda_ids: List[int], main_args: MainArg, task_option: TaskOption,
-        register_func: Callable
+    cuda_ids: List[int], main_args: MainArg, task_option: TaskOption,
+    register_func: Callable
 ):
     """ default function used to run the task
 
@@ -72,7 +74,7 @@ def run_task(
         raise e
     finally:
         if is_rank0() and task.option.train:
-            info(__name__, 'backup the task')
+            logger.info('backup the task')
             task.backup(immediate=True, resumable=True)
         if is_distributed():
             from torch.distributed import destroy_process_group
@@ -81,8 +83,8 @@ def run_task(
 
 class Launcher:
     def __init__(
-            self, arg_cls: Type[MainArg], register_func: Callable,
-            for_train: bool
+        self, arg_cls: Type[MainArg], register_func: Callable,
+        for_train: bool
     ):
         """ Base class of launchers for building and running a task properly
 

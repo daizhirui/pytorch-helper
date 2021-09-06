@@ -17,7 +17,7 @@ class Tester(Launcher):
 
         # dataset path
         if not os.path.exists(task_dict['dataset_path']) or \
-                self.args.dataset_path is not None:
+            self.args.dataset_path is not None:
             task_dict['dataset_path'] = self.args.dataset_path
 
         # output path

@@ -8,9 +8,11 @@ from torch.nn.modules import Module
 from .base import OptionBase
 from ..space import Spaces
 from ...utils.io import load_pth
-from ...utils.log import info
+from ...utils.log import get_logger
 
 __all__ = ['ModelOption']
+
+logger = get_logger(__name__)
 
 
 @dataclass()
@@ -45,11 +47,11 @@ class ModelOption(OptionBase):
         :return: model and state_dict
         """
         model = Spaces.build_model(self.name, **self.kwargs)
-        info(__name__, f'Build {type(model).__name__}')
+        logger.info(f'Build {type(model).__name__}')
 
         state_dict = None
         if self.pth_available:
             state_dict = load_pth(self.pth_path)
             model.load_state_dict(state_dict['model'])
-            info(__name__, f'Load model state from {self.pth_path}')
+            logger.info(f'Load model state from {self.pth_path}')
         return model, state_dict

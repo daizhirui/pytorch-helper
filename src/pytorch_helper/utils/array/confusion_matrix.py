@@ -11,7 +11,7 @@ __all__ = [
 
 
 def multiclass_score_to_accuracy(
-        score: np.ndarray, label: np.ndarray
+    score: np.ndarray, label: np.ndarray
 ) -> np.float:
     """ convert multiclass score accuracy.
 
@@ -25,7 +25,7 @@ def multiclass_score_to_accuracy(
 
 
 def confusion_matrix(
-        pred: np.ndarray, gt: np.ndarray, num_classes: int
+    pred: np.ndarray, gt: np.ndarray, num_classes: int
 ) -> np.ndarray:
     """ calculate a confusion matrix from prediction and ground truth.
 

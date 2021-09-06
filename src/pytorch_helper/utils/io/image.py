@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 from . import config
 from .make_dirs import make_dirs_for_file
-from ..log import info
+from ..log import get_logger
 
 __all__ = [
     'imread',
@@ -20,6 +20,8 @@ __all__ = [
     'plt_figure_to_pil',
     'image_obj_to_numpy'
 ]
+
+logger = get_logger(__name__)
 
 
 def imread(path: str) -> np.ndarray:
@@ -32,8 +34,8 @@ def imread(path: str) -> np.ndarray:
 
 
 def imsave(
-        path: str, arr: Union[Image.Image, plt.Figure, np.ndarray],
-        img_ext: str = None
+    path: str, arr: Union[Image.Image, plt.Figure, np.ndarray],
+    img_ext: str = None
 ):
     """ save image `arr` to `path`
 
@@ -54,7 +56,7 @@ def imsave(
         if np.max(arr) <= 1:
             arr = (arr * 255).astype(np.uint8)
         Image.fromarray(arr).save(path)
-    info(__name__, f'Save {path}')
+    logger.info(f'Save {path}')
 
 
 def plt_figure_to_numpy(figure: plt.Figure = None) -> np.ndarray:

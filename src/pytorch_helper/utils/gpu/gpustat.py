@@ -45,7 +45,7 @@ from .pynvml import nvmlSystemGetCudaDriverVersion
 from .pynvml import nvmlSystemGetDriverVersion
 from .util import bytes2human
 from .util import prettify_commandline
-from ..log import warn
+from ..log import get_logger
 
 NOT_SUPPORTED = 'Not Supported'
 MB = 1024 * 1024
@@ -53,6 +53,8 @@ MB = 1024 * 1024
 IS_WINDOWS = 'windows' in platform.platform().lower()
 
 __all__ = ['GPUStat', 'GPUStatCollection']
+
+logger = get_logger(__name__)
 
 
 class GPUStat(object):
@@ -430,62 +432,62 @@ class GPUStatCollection(object):
                     _handle, NVML_TEMPERATURE_GPU
                 )
             except NVMLError as err:
-                warn(__name__, str(err))
+                logger.warn(str(err))
                 temperature = None  # Not supported
 
             try:
                 fan_speed = nvmlDeviceGetFanSpeed(_handle)
             except NVMLError as err:
-                warn(__name__, str(err))
+                logger.warn(str(err))
                 fan_speed = None  # Not supported
 
             try:
                 memory = nvmlDeviceGetMemoryInfo(_handle)  # in Bytes
             except NVMLError as err:
-                warn(__name__, str(err))
+                logger.warn(str(err))
                 memory = None  # Not supported
 
             try:
                 utilization = nvmlDeviceGetUtilizationRates(_handle)
             except NVMLError as err:
-                warn(__name__, str(err))
+                logger.warn(str(err))
                 utilization = None  # Not supported
 
             try:
                 utilization_enc = nvmlDeviceGetEncoderUtilization(_handle)
             except NVMLError as err:
-                warn(__name__, str(err))
+                logger.warn(str(err))
                 utilization_enc = None  # Not supported
 
             try:
                 utilization_dec = nvmlDeviceGetDecoderUtilization(_handle)
             except NVMLError as err:
-                warn(__name__, str(err))
+                logger.warn(str(err))
                 utilization_dec = None  # Not supported
 
             try:
                 power = nvmlDeviceGetPowerUsage(_handle)
             except NVMLError as err:
-                warn(__name__, str(err))
+                logger.warn(str(err))
                 power = None
 
             try:
                 power_limit = nvmlDeviceGetEnforcedPowerLimit(_handle)
             except NVMLError as err:
-                warn(__name__, str(err))
+                logger.warn(str(err))
                 power_limit = None
 
             try:
                 nv_comp_processes = \
                     nvmlDeviceGetComputeRunningProcesses(_handle)
             except NVMLError as err:
-                warn(__name__, str(err))
+                logger.warn(str(err))
                 nv_comp_processes = None  # Not supported
             try:
                 nv_graphics_processes = \
                     nvmlDeviceGetGraphicsRunningProcesses(_handle)
             except NVMLError as err:
-                warn(__name__, str(err))
+                logger.warn(str(err))
                 nv_graphics_processes = None  # Not supported
 
             if nv_comp_processes is None and nv_graphics_processes is None:
@@ -561,7 +563,7 @@ class GPUStatCollection(object):
         try:
             driver_version = _decode(nvmlSystemGetDriverVersion())
         except NVMLError as e:
-            warn(__name__, str(e))
+            logger.warn(str(e))
             driver_version = None  # N/A
 
         try:
@@ -570,7 +572,7 @@ class GPUStatCollection(object):
             sub_version = cuda_version % 100
             cuda_version = f'{main_version}.{sub_version}'
         except NVMLError as e:
-            warn(__name__, str(e))
+            logger.warn(str(e))
             cuda_version = None  # N/A
 
         nvmlShutdown()

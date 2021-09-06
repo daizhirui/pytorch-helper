@@ -16,12 +16,13 @@ from .train_setting import TrainSettingOption
 from ...utils.io import make_dirs
 from ...utils.io import make_tar_file
 from ...utils.log import get_datetime
-from ...utils.log import info
-from ...utils.log import warn
+from ...utils.log import get_logger
 
 T = TypeVar('T')
 
 __all__ = ['TaskOption']
+
+logger = get_logger(__name__)
 
 
 @dataclass()
@@ -49,8 +50,7 @@ class TaskOption(OptionBase):
         self.train = for_train
 
         if 'DATASET_PATH' in os.environ and 'OUTPUT_PATH' in os.environ:
-            info(
-                __name__,
+            logger.info(
                 'Setup dataset path and output path from environment variables'
             )
             self.dataset_path = os.path.abspath(os.environ['DATASET_PATH'])
@@ -61,8 +61,7 @@ class TaskOption(OptionBase):
             assert self.output_path is not None, \
                 'output path is unavailable in environment or option file'
 
-            info(
-                __name__,
+            logger.info(
                 'Setup dataset path and output path from option file'
             )
 
@@ -100,9 +99,9 @@ class TaskOption(OptionBase):
                 self.datetime = get_datetime()
 
         if for_train:
-            info(__name__, f'create {self.output_path_tb}')
+            logger.info(f'create {self.output_path_tb}')
             make_dirs(self.output_path_tb)
-            info(__name__, f'create {self.output_path_pth}')
+            logger.info(f'create {self.output_path_pth}')
             make_dirs(self.output_path_pth)
             self.save_as_yaml(
                 os.path.join(self.output_path_tb, '..', 'option.yaml'))
@@ -114,8 +113,7 @@ class TaskOption(OptionBase):
                 )
                 make_tar_file(self.src_folder, dst)
             else:
-                warn(
-                    __name__,
+                logger.warn(
                     f'src_folder is None. Strongly recommend you to specify the'
                     f' source code folder for automatic backup.'
                 )

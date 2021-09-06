@@ -10,14 +10,14 @@ import torch
 
 from .gpustat import GPUStatCollection
 from ..dist import synchronize
-from ..log import info
-from ..log import warn
+from ..log import get_logger
 
 __all__ = [
     'set_cuda_visible_devices',
     'collect_cuda_device',
     'wait_gpus'
 ]
+logger = get_logger(__name__)
 
 
 def set_cuda_visible_devices(gpus: List[int]):
@@ -31,7 +31,7 @@ def collect_cuda_device(cuda_id: int, mb_size: int = None) -> torch.Tensor:
     :param mb_size: int of memory size in MB to collect
     :return: torch.Tensor of the requested memory
     """
-    info(__name__, f'Collect CUDA {cuda_id}')
+    logger.info(f'Collect CUDA {cuda_id}')
     torch.cuda.set_device(cuda_id)
     if mb_size is None:
         q = GPUStatCollection.new_query()[cuda_id]
@@ -53,7 +53,7 @@ def wait_gpus(gpus: dict, collect=True, pre_release=True, sync=True):
         the gpu memory together
     """
     if gpus is None:
-        warn(__name__, '`gpus` is None, potential bug in gpu management module')
+        logger.warn('`gpus` is None, potential bug in gpu management module')
         return
     gpus_not_ready = True
     blocks = dict()
@@ -68,21 +68,19 @@ def wait_gpus(gpus: dict, collect=True, pre_release=True, sync=True):
                 continue
             q = queries[gpu_id]
             if q.processes is not None and len(q.processes) > 0:
-                info(
-                    __name__, f'GPU {gpu_id} is used, check again in 5 seconds'
-                )
+                logger.info(f'GPU {gpu_id} is used, check again in 5 seconds')
                 gpus_not_ready = True
                 break
             else:
                 if q.processes is None:
-                    warn(__name__, f'GPU {gpu_id} processes is None')
-                info(__name__, f'GPU {gpu_id} is ready')
+                    logger.warn(f'GPU {gpu_id} processes is None')
+                logger.info(f'GPU {gpu_id} is ready')
                 if collect:
                     blocks[gpu_id] = collect_cuda_device(
                         cuda_id, q.memory_total
                     )
 
-    info(__name__, f'GPUs {gpus.values()} are ready!')
+    logger.info(f'GPUs {gpus.values()} are ready!')
 
     if sync:
         synchronize()

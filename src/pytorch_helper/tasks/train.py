@@ -9,11 +9,13 @@ from .base import BatchPack
 from .base import TaskBase
 from ..utils.dist import synchronize
 from ..utils.io import save_pth
-from ..utils.log import info
+from ..utils.log import get_logger
 from ..utils.log import pbar
 from ..utils.meter import Meter
 
 __all__ = ['TrainTask']
+
+logger = get_logger(__name__)
 
 
 class TrainTask(TaskBase, ABC):
@@ -62,7 +64,7 @@ class TrainTask(TaskBase, ABC):
             }
 
         if self.is_rank0:
-            info(__name__, "Initialize tensorboard")
+            logger.info("Initialize tensorboard")
             self.tboard = SummaryWriter(log_dir=self.option.output_path_tb)
 
         if state_dict and self.option.resume:
@@ -81,7 +83,7 @@ class TrainTask(TaskBase, ABC):
                 self.epoch = state_dict['epoch'] + 1
                 if self.is_rank0:
                     self.progress_bars['epoch'].update(self.epoch)
-                info(__name__, f"Resume from epoch {state_dict['epoch']}")
+                logger.info(f"Resume from epoch {state_dict['epoch']}")
 
     def state_dict(self):
         state_dict = super(TrainTask, self).state_dict()
@@ -111,7 +113,7 @@ class TrainTask(TaskBase, ABC):
         pth_name = f'{name}.pth' if name else f'epoch_{self.epoch}.pth'
         path = os.path.join(self.option.output_path_pth, pth_name)
         save_pth(path, state_dict)
-        info(__name__, f"Saving checkpoint: {path} at epoch {self.epoch}")
+        logger.info(f"Saving checkpoint: {path} at epoch {self.epoch}")
 
     def save_best_model(self, valid_loss):
         """ save the model which has minimum validation loss
@@ -165,7 +167,7 @@ class TrainTask(TaskBase, ABC):
         synchronize()
 
         if self.option.train_setting.valid_on_test > 0 and \
-                epoch % self.option.train_setting.valid_on_test == 0:
+            epoch % self.option.train_setting.valid_on_test == 0:
             self._test()
             self.summarize_logging_after_stage()
             synchronize()
@@ -220,7 +222,7 @@ class TrainTask(TaskBase, ABC):
             self.cur_dataloader = self.dataloader.train_loader
             if self.current_train_routine.set_init_lr(self.optimizer):
                 if self.is_rank0 and self.epoch > 0:
-                    info(__name__, "Save before applying new routine")
+                    logger.info("Save before applying new routine")
                     self.epoch -= 1
                     self.save_pth(f'epoch_{self.epoch}')
                     self.epoch += 1
@@ -396,7 +398,7 @@ class TrainTask(TaskBase, ABC):
                 record_op=Meter.RecordOp.APPEND,
                 reduce_op=Meter.ReduceOp.STORE
             )
-            info(__name__, f'{tag} = {v}')
+            logger.info(f'{tag} = {v}')
 
         if self.is_rank0:
             self.rank0_update_logging_after_stage(summary)

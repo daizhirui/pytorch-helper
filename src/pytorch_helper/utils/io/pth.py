@@ -3,12 +3,14 @@ import time
 import torch
 
 from .make_dirs import make_dirs_for_file
-from ..log import info
+from ..log import get_logger
 
 __all__ = [
     'load_pth',
     'save_pth'
 ]
+
+logger = get_logger(__name__)
 
 
 def load_pth(path: str) -> dict:
@@ -17,11 +19,11 @@ def load_pth(path: str) -> dict:
     :param path: str of path of the checkpoint file
     :return: dict
     """
-    info(__name__, f'Load state dict from {path}')
+    logger.info(f'Load state dict from {path}')
     t = time.time()
     state_dict = torch.load(path, map_location=torch.device('cpu'))
     t = time.time() - t
-    info(__name__, f'Loaded, took {t:.2f} seconds')
+    logger.info(f'Loaded, took {t:.2f} seconds')
     return state_dict
 
 
@@ -33,11 +35,11 @@ def save_pth(path: str, state_dict: dict):
     """
     make_dirs_for_file(path)
 
-    info(__name__, f'Save state dict to {path}')
+    logger.info(f'Save state dict to {path}')
     t = time.time()
     if torch.__version__ >= '1.6.0':
         torch.save(state_dict, path, _use_new_zipfile_serialization=False)
     else:
         torch.save(state_dict, path)
     t = time.time() - t
-    info(__name__, f'Saved, took {t:.2f} seconds')
+    logger.info(f'Saved, took {t:.2f} seconds')

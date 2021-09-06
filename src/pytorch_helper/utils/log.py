@@ -1,39 +1,39 @@
 import os
 from datetime import datetime
-from typing import Any
-from typing import Dict
+from logging import CRITICAL
+from logging import DEBUG
+from logging import ERROR
+from logging import INFO
+from logging import NOTSET
+from logging import WARNING
 from typing import Iterable
 
 import colorama
+import colorlog
 import torch.cuda
 import torch.distributed as pt_dist
 from ruamel import yaml
 from tqdm import tqdm
 from tqdm.notebook import tqdm as tqdm_notebook
 
-from pytorch_helper.utils.dist import get_rank
 from pytorch_helper.utils.dist import is_distributed
 
 colorama.init()
 
-VERBOSE_INFO = 3  # all
-VERBOSE_WARN = 2  # warn and error
-VERBOSE_ERROR = 1  # error only
-VERBOSE_NONE = 0  # verbose off
-
 bar = tqdm
 bar_len = 80
-verbose_level = VERBOSE_INFO
-
-if get_rank() != 0:
-    verbose_level = VERBOSE_NONE
+verbose_level = NOTSET
 
 __all__ = [
     'notebook_compatible',
     'pbar',
-    'info',
-    'warn',
-    'error',
+    'get_logger',
+    'NOTSET',
+    'DEBUG',
+    'INFO',
+    'WARNING',
+    'ERROR',
+    'CRITICAL',
     'pretty_dict',
     'get_datetime'
 ]
@@ -46,8 +46,6 @@ def notebook_compatible():
     bar = tqdm_notebook
     global bar_len
     bar_len = None
-    global verbose_level
-    verbose_level = VERBOSE_NONE
 
 
 def pbar(iterable: Iterable = None, ncols: int = bar_len, **kwargs):
@@ -61,58 +59,14 @@ def pbar(iterable: Iterable = None, ncols: int = bar_len, **kwargs):
     return bar(iterable, ncols=ncols, **kwargs)
 
 
-def _get_prefix(level: int, field: str) -> str:
-    """ generate the prefix for the logging
+def get_logger(name: str):
+    fmt = f'[{_get_device()}][%(process)d][%(asctime)s][%(levelname)s: %(filename)s: %(lineno)4d]: %(message)s'
+    handler = colorlog.StreamHandler()
+    handler.setFormatter(colorlog.ColoredFormatter(fmt))
 
-    :param level: int of verbose level
-    :param field: str to indicate the logging position
-    :return: str
-    """
-    prefix = colorama.Fore.GREEN + '['
-    time_str = datetime.now().strftime('%m/%d %H:%M:%S')
-    if level == VERBOSE_ERROR:
-        prefix += f'{colorama.Fore.RED}ERROR{colorama.Fore.GREEN}'
-    elif level == VERBOSE_WARN:
-        prefix += f'{colorama.Fore.YELLOW}WARN{colorama.Fore.GREEN}]'
-    else:
-        prefix += f'INFO]'
-
-    prefix += f'[{time_str}][{_get_device()}][{field}]: '
-    prefix += colorama.Style.RESET_ALL
-    return prefix
-
-
-def info(field: str, msg: str, **kwargs: Dict[str, Any]):
-    """ print an info message
-
-    :param field: str to indicate the logging position
-    :param msg: str of the logging content
-    :param kwargs: extra keyword arguments posted to `write` function
-    """
-    if verbose_level >= VERBOSE_INFO:
-        bar.write(_get_prefix(VERBOSE_INFO, field) + msg, **kwargs)
-
-
-def warn(field: str, msg: str, **kwargs: Dict[str, Any]):
-    """ print a warning message
-
-    :param field: str to indicate the logging position
-    :param msg: str of the logging content
-    :param kwargs: extra keyword arguments posted to `write` function
-    """
-    if verbose_level >= VERBOSE_WARN:
-        bar.write(_get_prefix(VERBOSE_WARN, field) + msg, **kwargs)
-
-
-def error(field: str, msg: str, **kwargs: Dict[str, Any]):
-    """ print an error message
-
-    :param field: str to indicate the logging position
-    :param msg: str of the logging content
-    :param kwargs: extra keyword arguments posted to `write` function
-    """
-    if verbose_level >= VERBOSE_ERROR:
-        bar.write(_get_prefix(VERBOSE_ERROR, field) + msg, **kwargs)
+    logger = colorlog.getLogger(name)
+    logger.addHandler(handler)
+    return logger
 
 
 def pretty_dict(a: dict) -> str:
