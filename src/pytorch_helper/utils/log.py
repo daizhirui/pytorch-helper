@@ -1,4 +1,5 @@
 import os
+import sys
 from datetime import datetime
 from logging import CRITICAL
 from logging import DEBUG
@@ -22,7 +23,7 @@ colorama.init()
 
 bar = tqdm
 bar_len = 80
-verbose_level = NOTSET
+verbose_level = DEBUG
 
 __all__ = [
     'notebook_compatible',
@@ -60,12 +61,14 @@ def pbar(iterable: Iterable = None, ncols: int = bar_len, **kwargs):
 
 
 def get_logger(name: str):
-    fmt = f'[{_get_device()}][%(process)d][%(asctime)s][%(levelname)s: %(filename)s: %(lineno)4d]: %(message)s'
-    handler = colorlog.StreamHandler()
+    fmt = f'%(log_color)s[{_get_device()}][%(process)d][%(asctime)s]' \
+          f'[%(levelname)s: %(filename)s: %(lineno)4d]: %(message)s'
+    handler = colorlog.StreamHandler(stream=sys.stdout)
     handler.setFormatter(colorlog.ColoredFormatter(fmt))
 
     logger = colorlog.getLogger(name)
     logger.addHandler(handler)
+    logger.setLevel(verbose_level)
     return logger
 
 

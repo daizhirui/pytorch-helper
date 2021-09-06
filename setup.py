@@ -11,6 +11,7 @@ requires = [
     'ruamel.yaml',
     'tqdm',
     'colorama',
+    'colorlog',
     'psutil',
     'tensorboard',
     'tensorboardX',
