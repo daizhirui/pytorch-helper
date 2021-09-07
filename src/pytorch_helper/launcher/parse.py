@@ -54,13 +54,29 @@ class MainArg:
         os.environ['DEBUG'] = '1' if self.debug else '0'
         os.environ['DEBUG_SIZE'] = str(self.debug_size)
 
+        if not self.boost:
+            # this make RNN training more deterministic
+            # see https://pytorch.org/docs/stable/generated/torch.nn.LSTM.html
+            # and https://pytorch.org/docs/stable/generated/torch.use_deterministic_algorithms.html
+            os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
+            os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
+
         import torch
+        cudnn = getattr(torch.backends, 'cudnn', None)
+
         if self.boost:
-            logger.info('turn on cudnn boost')
-            cudnn = getattr(torch.backends, 'cudnn', None)
+            logger.info('turn on cudnn boost, more non-deterministic algorithms'
+                        ' will be used to improve the performance.')
             if cudnn:
                 cudnn.deterministic = False
                 cudnn.benchmark = True
+        else:
+            logger.info('use setting for less non-deterministic operations, '
+                        'use --boost can improve performance but the outcome '
+                        'may differ.')
+            if cudnn:
+                cudnn.deterministic = True
+                cudnn.benchmark = False
 
         from pytorch_helper.utils import io
         io.config['img_ext'] = self.img_ext
