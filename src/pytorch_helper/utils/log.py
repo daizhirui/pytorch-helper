@@ -1,5 +1,4 @@
 import os
-import sys
 from datetime import datetime
 from logging import CRITICAL
 from logging import DEBUG
@@ -60,10 +59,20 @@ def pbar(iterable: Iterable = None, ncols: int = bar_len, **kwargs):
     return bar(iterable, ncols=ncols, **kwargs)
 
 
+class TqdmStream:
+    @staticmethod
+    def write(msg):
+        tqdm.write(msg, end='')
+
+    @staticmethod
+    def flush():
+        return
+
+
 def get_logger(name: str):
     fmt = f'%(log_color)s[{_get_device()}][%(process)d][%(asctime)s]' \
           f'[%(levelname)s: %(filename)s: %(lineno)4d]: %(message)s'
-    handler = colorlog.StreamHandler(stream=sys.stdout)
+    handler = colorlog.StreamHandler(stream=TqdmStream)
     handler.setFormatter(colorlog.ColoredFormatter(fmt))
 
     logger = colorlog.getLogger(name)

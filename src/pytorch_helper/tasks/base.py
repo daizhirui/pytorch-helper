@@ -203,7 +203,7 @@ class TaskBase(LauncherTask, ABC):
 
     # model
     def model_forward_backward(
-        self, batch_pack: BatchPack, backward=False
+        self, batch_pack: BatchPack, backward: bool = False
     ) -> BatchPack:
         """ This method should define how to perform model forward and
         backward propagation, and update `batch_pack.pred`, `batch_pack.loss`,
