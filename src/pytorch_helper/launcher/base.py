@@ -108,7 +108,10 @@ class Launcher:
 
         self.register_func()
 
-        from pytorch_helper.settings.space import Spaces
+        from ..settings.options import OptionBase
+        OptionBase.option_file_dir = os.path.dirname(self.args.task_option_file)
+
+        from ..settings.space import Spaces
         self.task_option = Spaces.build_task_option(task_dict)
         print(self.task_option)
 

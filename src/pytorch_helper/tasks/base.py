@@ -143,6 +143,12 @@ class TaskBase(LauncherTask, ABC):
         self.current_train_routine = None
         self.cur_stage = None
         self.tboard = None
+        self.batch_cnt = {
+            self.STAGE_TRAIN: 0,
+            self.STAGE_VALID: 0,
+            self.STAGE_TEST : 0,
+            'all'           : 0
+        }
         # post init by descendents
         self.post_init(state_dict)
 

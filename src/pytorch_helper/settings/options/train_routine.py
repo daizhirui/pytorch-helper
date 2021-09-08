@@ -19,6 +19,7 @@ class TrainRoutine(OptionBase):
     note: str = None
 
     def __post_init__(self):
+        super(TrainRoutine, self).__post_init__()
         if self.train_modules is not None:
             if isinstance(self.train_modules, str):
                 self.train_modules = [

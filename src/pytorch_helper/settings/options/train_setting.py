@@ -16,9 +16,12 @@ class TrainSettingOption(OptionBase):
     save_model_freq: int
     valid_on_test: bool
     train_routines: List[Union[dict, TrainRoutine]]
-    gradient_clip: float = None
+    gradient_clip: float = 0
+    detect_gradient_explosion: bool = False
+    gradient_explosion_threshold: float = 1e5
 
     def __post_init__(self):
+        super(TrainSettingOption, self).__post_init__()
         self.train_routines = [
             TrainRoutine(**r) for r in self.train_routines
         ]

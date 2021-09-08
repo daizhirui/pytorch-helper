@@ -1,5 +1,7 @@
+import os
 from dataclasses import asdict
 from dataclasses import dataclass
+from dataclasses import fields
 from typing import Type
 from typing import TypeVar
 
@@ -13,7 +15,11 @@ T = TypeVar('T')
 __all__ = ['OptionBase']
 
 logger = get_logger(__name__)
+
+
 class _Base:
+    option_file_dir: str = None
+
     # implement class methods
     @classmethod
     def load_from_dict(cls: Type[T], option_dict: dict, **kwargs) -> T:
@@ -48,6 +54,23 @@ class _Base:
 
 @dataclass()
 class OptionBase(_Base):
+
+    def __post_init__(self):
+        if OptionBase.option_file_dir is None:
+            logger.warn('OptionBase.option_file_dir is not set, skip loading '
+                        'from file recursively.')
+            return
+        for f in fields(self):
+            attr = getattr(self, f.name)
+            if f.type is type(attr):
+                continue
+            if not isinstance(attr, str):
+                continue
+            path = os.path.join(OptionBase.option_file_dir, attr)
+            if os.path.exists(path):
+                with open(path, 'r') as file:
+                    setattr(self, f.name, yaml.safe_load(file))
+                logger.info(f'Load {type(self).__name__}.{f.name} from {path}')
 
     def asdict(self) -> dict:
         """ convert self to Dict

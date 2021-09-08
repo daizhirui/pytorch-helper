@@ -3,6 +3,7 @@ from abc import ABC
 from collections import OrderedDict
 
 import torch
+import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
 
 from .base import BatchPack
@@ -22,12 +23,6 @@ class TrainTask(TaskBase, ABC):
 
     def __init__(self, task_option):
         self.progress_bars = None
-        self.batch_cnt = {
-            self.STAGE_TRAIN: 0,
-            self.STAGE_VALID: 0,
-            self.STAGE_TEST : 0,
-            'all'           : 0
-        }
         self.in_stage_meter_keys = set()
 
         super(TrainTask, self).__init__(task_option)
@@ -166,8 +161,8 @@ class TrainTask(TaskBase, ABC):
         valid_summary = self.summarize_logging_after_stage()
         synchronize()
 
-        if self.option.train_setting.valid_on_test > 0 and \
-            epoch % self.option.train_setting.valid_on_test == 0:
+        if self.option.train_setting.valid_on_test > 0 \
+                and epoch % self.option.train_setting.valid_on_test == 0:
             self._test()
             self.summarize_logging_after_stage()
             synchronize()
@@ -263,6 +258,24 @@ class TrainTask(TaskBase, ABC):
         # should return a dict of result to use
         self.optimizer.zero_grad()
         self.model_forward_backward(batch_pack, backward=True)
+
+        if self.option.train_setting.gradient_clip > 0:
+            nn.utils.clip_grad_norm_(
+                filter(lambda p: p.requires_grad, self.model.parameters()),
+                self.option.train_setting.gradient_clip
+            )
+
+        if self.option.train_setting.detect_gradient_explosion:
+            th = self.option.train_setting.gradient_explosion_threshold
+            for parameter in self.model.parameters():
+                if parameter.requires_grad:
+                    if torch.any(torch.isnan(parameter.grad)):
+                        logger.error('nan in grad!')
+                        exit(1)
+                    elif torch.any(torch.ge(parameter.grad, th)):
+                        logger.error('gradient explodes!')
+                        exit(1)
+
         self.optimizer.step()
         return batch_pack
 

@@ -44,8 +44,10 @@ class TaskOption(OptionBase):
     test_option: Any
     for_train: InitVar[bool]
     is_distributed: InitVar[bool]
+    print_freq: int = 10
 
     def __post_init__(self, for_train: bool, is_distributed: bool):
+        super(TaskOption, self).__post_init__()
         self.cuda_ids = None
         self.train = for_train
 

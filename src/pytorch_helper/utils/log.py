@@ -1,4 +1,5 @@
 import os
+import sys
 from datetime import datetime
 from logging import CRITICAL
 from logging import DEBUG
@@ -69,15 +70,29 @@ class TqdmStream:
         return
 
 
+class ExitHandler(colorlog.StreamHandler):
+    def emit(self, record):
+        if record.levelno >= ERROR:
+            super(ExitHandler, self).emit(record)
+            sys.exit(1)
+
+
+exit_on_error = False
+
+
 def get_logger(name: str):
     fmt = f'%(log_color)s[{_get_device()}][%(process)d][%(asctime)s]' \
-          f'[%(levelname)s: %(filename)s: %(lineno)4d]: %(message)s'
+          f'[%(levelname)s: %(name)s: %(lineno)4d]: %(message)s'
     handler = colorlog.StreamHandler(stream=TqdmStream)
     handler.setFormatter(colorlog.ColoredFormatter(fmt))
 
     logger = colorlog.getLogger(name)
     logger.addHandler(handler)
     logger.setLevel(verbose_level)
+    if exit_on_error:
+        handler = ExitHandler(stream=TqdmStream)
+        handler.setFormatter(colorlog.ColoredFormatter(fmt))
+        logger.addHandler(handler)
     return logger
 
 

@@ -70,7 +70,7 @@ class MeterItem:
         value, weight = self._pre_process(value, weight)
 
         for w, v in zip(weight, value):
-            self.data += np.array(v) * w
+            self.data += np.array(v, dtype=float) * w
             self.value_cnt += 1
             self.weight_cnt += w
 

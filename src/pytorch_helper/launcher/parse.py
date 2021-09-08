@@ -7,6 +7,7 @@ from typing import TypeVar
 from typing import Union
 
 from ..utils.gpu.wait_gpus import set_cuda_visible_devices
+from ..utils import log
 from ..utils.log import get_logger
 
 T = TypeVar('T')
@@ -32,6 +33,7 @@ class MainArg:
     img_ext: str
     debug: bool
     debug_size: int
+    exit_on_error: bool
 
     def __post_init__(self):
         os.environ['DDP_PORT'] = str(self.ddp_port)
@@ -53,6 +55,7 @@ class MainArg:
 
         os.environ['DEBUG'] = '1' if self.debug else '0'
         os.environ['DEBUG_SIZE'] = str(self.debug_size)
+        log.exit_on_error = self.exit_on_error
 
         if not self.boost:
             # this make RNN training more deterministic
@@ -93,10 +96,12 @@ class MainArg:
         )
         group.add_argument(
             '--task-option-file', type=str,
-            help='Path to the file of training options')
+            help='Path to the file of training options'
+        )
         group.add_argument(
             '--test-option-file', type=str,
-            help='Path to the file of extra options for testing')
+            help='Path to the file of extra options for testing'
+        )
 
         group = parser.add_argument_group(
             'GPU Setting arguments', 'Specify GPU settings'
@@ -104,7 +109,8 @@ class MainArg:
         group.add_argument(
             '--use-gpus',
             nargs='+', required=True, type=int, metavar='GPU_INDEX',
-            help='Indices of GPUs for training')
+            help='Indices of GPUs for training'
+        )
         group.add_argument(
             '--wait-gpus', nargs='+', default=[], type=int, metavar='GPU_INDEX',
             help='NVIDIA-SMI Indices of GPUs specified by --use-gpus to wait. '
@@ -113,18 +119,22 @@ class MainArg:
                  'device mapping. e.g. GPU4 shown in NVIDIA-SMI might be '
                  'GPU8 in --use-gpus. This is abnormal but --wait-gpus can '
                  'deal with it correctly if you post the correct mapping by '
-                 '"--use-gpus 8 --wait-gpus 4".')
+                 '"--use-gpus 8 --wait-gpus 4".'
+        )
         group.add_argument(
             '--boost', action='store_true',
-            help='Turn on cudnn boost')
+            help='Turn on cudnn boost'
+        )
         group = group.add_mutually_exclusive_group()
         group.add_argument(
             '--ddp-port', default=23456, type=int,
-            help='Port used for DistributedDataParallel, default: 23456')
+            help='Port used for DistributedDataParallel, default: 23456'
+        )
         group.add_argument(
             '--use-data-parallel',
             action='store_true',
-            help='Use DataParallel instead of DistributedDataParallel')
+            help='Use DataParallel instead of DistributedDataParallel'
+        )
 
         group = parser.add_argument_group(
             'Resume Setting arguments', 'Specify resume settings'
@@ -163,6 +173,11 @@ class MainArg:
         group.add_argument(
             '--debug-size', default=32,
             help='Number of samples in each stage dataset for debug'
+        )
+        group.add_argument(
+            '--exit-on-error',
+            action='store_true',
+            help='If used, exit with code=1 when error level logging appears.'
         )
         return parser
 
