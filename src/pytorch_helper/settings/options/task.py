@@ -20,9 +20,24 @@ from ...utils.log import get_logger
 
 T = TypeVar('T')
 
-__all__ = ['TaskOption']
+__all__ = [
+    'merge_task_dicts',
+    'TaskOption'
+]
 
 logger = get_logger(__name__)
+
+
+def merge_task_dicts(base: dict, update: dict):
+    out = base.copy()
+
+    for key, value in update.items():
+        assert key in base, f'key {key} not found in base dict'
+        if isinstance(value, dict):
+            out[key] = merge_task_dicts(base[key], value)
+        else:
+            out[key] = value
+    return out
 
 
 @dataclass()

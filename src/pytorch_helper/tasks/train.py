@@ -182,10 +182,7 @@ class TrainTask(TaskBase, ABC):
             # save models
             self.save_best_model(valid_summary)
             self.backup()
-            lr = self.optimizer.param_groups[0]['lr']
             self.progress_bars['epoch'].update()
-            if self.tboard is not None:
-                self.tboard.add_scalar('learning-rate', lr, self.epoch)
             self.rank0_update_logging_after_epoch()
 
     def run(self):
@@ -194,6 +191,9 @@ class TrainTask(TaskBase, ABC):
         model state as a non-resumable checkpoint file.
         """
         for epoch in range(self.epoch, self.option.train_setting.epochs):
+            if self.is_rank0 and self.tboard is not None:
+                lr = self.optimizer.param_groups[0]['lr']
+                self.tboard.add_scalar('learning-rate', lr, self.epoch)
             # NOTE: different stage should not share the same set of keys
             self.meter.reset_tags(self.in_stage_meter_keys)
             valid_summary = self.one_epoch(epoch)

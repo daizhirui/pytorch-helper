@@ -200,7 +200,7 @@ class TaskBase(LauncherTask, ABC):
         :return: dict of task state
         """
         return dict(
-            option=self.option.asdict(),
+            option=self.option.as_dict(),
             model=self.get_state(self.unwrapped_model),
             loss_fn=self.get_state(self.loss_fn),
             epoch=self.epoch,

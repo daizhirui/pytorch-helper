@@ -60,19 +60,19 @@ class OptionBase(_Base):
             logger.warn('OptionBase.option_file_dir is not set, skip loading '
                         'from file recursively.')
             return
-        for f in fields(self):
-            attr = getattr(self, f.name)
-            if f.type is type(attr):
-                continue
-            if not isinstance(attr, str):
-                continue
-            path = os.path.join(OptionBase.option_file_dir, attr)
-            if os.path.exists(path):
-                with open(path, 'r') as file:
-                    setattr(self, f.name, yaml.safe_load(file))
-                logger.info(f'Load {type(self).__name__}.{f.name} from {path}')
+        # for f in fields(self):
+        #     attr = getattr(self, f.name)
+        #     if f.type is type(attr):
+        #         continue
+        #     if not isinstance(attr, str):
+        #         continue
+        #     path = os.path.join(OptionBase.option_file_dir, attr)
+        #     if os.path.exists(path):
+        #         with open(path, 'r') as file:
+        #             setattr(self, f.name, yaml.safe_load(file))
+        #         logger.info(f'Load {type(self).__name__}.{f.name} from {path}')
 
-    def asdict(self) -> dict:
+    def as_dict(self) -> dict:
         """ convert self to Dict
 
         :return: Dict of self's attributes
@@ -85,7 +85,7 @@ class OptionBase(_Base):
         :param output_path: path to output
         :return:
         """
-        save_yaml(output_path, self.asdict())
+        save_yaml(output_path, self.as_dict())
 
     def __str__(self):
         """ convert self to a pretty yaml string the same as the content in the
@@ -104,5 +104,5 @@ class OptionBase(_Base):
                 self.s += s.decode('utf-8')
 
         stream = MySteam()
-        yaml_obj.dump(self.asdict(), stream)
+        yaml_obj.dump(self.as_dict(), stream)
         return stream.s
