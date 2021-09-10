@@ -13,15 +13,10 @@ from ..dist import synchronize
 from ..log import get_logger
 
 __all__ = [
-    'set_cuda_visible_devices',
     'collect_cuda_device',
     'wait_gpus'
 ]
 logger = get_logger(__name__)
-
-
-def set_cuda_visible_devices(gpus: List[int]):
-    os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, gpus))
 
 
 def collect_cuda_device(cuda_id: int, mb_size: int = None) -> torch.Tensor:

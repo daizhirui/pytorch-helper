@@ -1,6 +1,11 @@
 """ Miscellaneous Utilities. """
 
 import os.path
+from typing import List
+
+
+def set_cuda_visible_devices(gpus: List[int]):
+    os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, gpus))
 
 
 def bytes2human(in_bytes):

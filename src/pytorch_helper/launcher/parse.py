@@ -6,7 +6,7 @@ from typing import Type
 from typing import TypeVar
 from typing import Union
 
-from ..utils.gpu.wait_gpus import set_cuda_visible_devices
+from ..utils.gpu import set_cuda_visible_devices
 from ..utils import log
 from ..utils.log import get_logger
 
