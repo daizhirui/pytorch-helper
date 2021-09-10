@@ -78,7 +78,7 @@ def save_yaml(path: str, a: dict):
     make_dirs_for_file(path)
 
     yaml_obj = yaml.YAML()
-    yaml_obj.indent(mapping=4, sequence=4)
+    yaml_obj.indent(mapping=4, sequence=6, offset=4)
     with open(path, 'w') as file:
         yaml_obj.dump(a, file)
     logger.info(f'Save {path}')
