@@ -152,7 +152,8 @@ class Meter(object):
         if tags is None:
             tags = self.meter_items.keys()
         for tag in tags:
-            self.meter_items[tag].reset()
+            if tag in self.meter_items:
+                self.meter_items[tag].reset()
         # if tags is None:
         #     self.data = dict()
         # else:
