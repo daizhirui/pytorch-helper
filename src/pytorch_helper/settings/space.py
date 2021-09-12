@@ -19,13 +19,13 @@ class Spaces:
     TASK_FOR_TEST = 'tasks_for_test'
 
     _spaces = {
-        MODEL         : dict(),
-        DATALOADER    : dict(),
-        LOSS_FN       : dict(),
-        METRICS       : dict(),
-        TASK_OPTIONS  : dict(),
+        MODEL: dict(),
+        DATALOADER: dict(),
+        LOSS_FN: dict(),
+        METRICS: dict(),
+        TASK_OPTIONS: dict(),
         TASK_FOR_TRAIN: dict(),
-        TASK_FOR_TEST : dict()
+        TASK_FOR_TEST: dict()
     }
 
     @staticmethod

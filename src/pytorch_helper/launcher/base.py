@@ -72,7 +72,12 @@ def run_task(
     try:
         task.run()
     except Exception as e:
-        raise e
+        if main_args.profiling:
+            if not isinstance(e, KeyboardInterrupt):
+                logger.info('raise error')
+                raise e
+        else:
+            raise e
     finally:
         if is_rank0() and task.option.train:
             logger.info('backup the task')
@@ -84,8 +89,7 @@ def run_task(
 
 class Launcher:
     def __init__(
-        self, arg_cls: Type[MainArg], register_func: Callable,
-        for_train: bool
+        self, arg_cls: Type[MainArg], register_func: Callable, for_train: bool
     ):
         """ Base class of launchers for building and running a task properly
 
@@ -140,6 +144,10 @@ class Launcher:
                     f'is not a file'
                 )
             task_dict['test_option'] = load_yaml(self.args.test_option_file)
+
+        task_dict['profiling'] = self.args.profiling
+        task_dict['profile_tool'] = self.args.profile_tool
+        task_dict['profile_memory'] = self.args.profile_memory
 
         return task_dict
 

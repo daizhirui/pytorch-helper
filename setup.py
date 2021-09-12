@@ -15,6 +15,8 @@ requires = [
     'psutil',
     'tensorboard',
     'tensorboardX',
+    'torch_tb_profiler',
+    'snakeviz',
     'six>=1.7',
     'blessed>=1.17.1',
     'setuptools',

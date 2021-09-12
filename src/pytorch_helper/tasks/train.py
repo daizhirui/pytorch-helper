@@ -44,7 +44,7 @@ class TrainTask(TaskBase, ABC):
         if self.is_rank0:
             # progress bar
             self.progress_bars = {
-                'epoch'         : pbar(
+                'epoch': pbar(
                     initial=self.epoch, total=self.option.train_setting.epochs,
                     position=0, desc='Epoch'
                 ),
@@ -54,7 +54,7 @@ class TrainTask(TaskBase, ABC):
                 self.STAGE_VALID: pbar(
                     position=2, desc='Valid'
                 ),
-                self.STAGE_TEST : pbar(
+                self.STAGE_TEST: pbar(
                     position=3, desc=' Test'
                 )
             }
@@ -163,7 +163,7 @@ class TrainTask(TaskBase, ABC):
         synchronize()
 
         if self.option.train_setting.valid_on_test > 0 \
-                and epoch % self.option.train_setting.valid_on_test == 0:
+            and epoch % self.option.train_setting.valid_on_test == 0:
             self._test()
             self.summarize_logging_after_stage()
             synchronize()
@@ -191,6 +191,73 @@ class TrainTask(TaskBase, ABC):
         equal to `self.option.training_setting.epochs`, and save the final
         model state as a non-resumable checkpoint file.
         """
+        if self.option.profiling:
+            if self.option.train:
+                self.cur_stage = self.STAGE_TRAIN
+                batch_func = self.train
+            else:
+                self.cur_stage = self.STAGE_TEST
+                batch_func = self.test
+            self.setup_before_stage()
+
+            logger.info(f'Start {self.option.profile_tool}')
+
+            if self.option.profile_tool == 'cprofile':
+                import cProfile
+
+                with cProfile.Profile() as profiler:
+                    with torch.enable_grad():
+                        for batch_pack in self.load_batch_pack():
+                            batch_func(batch_pack)
+                            synchronize()
+                            self.update_logging_in_stage(batch_pack)
+                            synchronize()
+
+                    path = os.path.join(
+                        self.option.output_path_tb, 'profile_result.cprofile'
+                    )
+                    profiler.dump_stats(path)
+
+                logger.info('Visualize profiling result')
+                try:
+                    os.system(f'snakeviz {path}')
+                except KeyboardInterrupt:
+                    exit(0)
+
+            elif self.option.profile_tool == 'torch':
+                from ..utils.profiler import PatchedProfiler
+
+                with PatchedProfiler(
+                    activities=[torch.profiler.ProfilerActivity.CPU,
+                                torch.profiler.ProfilerActivity.CUDA],
+                    on_trace_ready=torch.profiler.tensorboard_trace_handler(
+                        self.option.output_path_tb
+                    ),
+                    profile_memory=self.option.profile_memory,
+                    with_stack=True
+                ) as profiler:
+                    with torch.enable_grad():
+                        for batch_pack in self.load_batch_pack():
+                            batch_func(batch_pack)
+                            synchronize()
+                            self.update_logging_in_stage(batch_pack)
+                            synchronize()
+                            profiler.step()
+
+                logger.info('Visualize profiling result')
+
+                try:
+                    os.system(f'tensorboard '
+                              f'--logdir {self.option.output_path_tb} '
+                              f'--port 6005 ')
+                except KeyboardInterrupt:
+                    exit(0)
+            else:
+                raise ValueError(f'Unknown profiling tool: '
+                                 f'{self.option.profile_tool}')
+
+            exit(0)
+
         for epoch in range(self.epoch, self.option.train_setting.epochs):
             if self.is_rank0 and self.tboard is not None:
                 lr = self.optimizer.param_groups[0]['lr']

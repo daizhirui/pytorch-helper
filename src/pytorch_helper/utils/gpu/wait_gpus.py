@@ -2,9 +2,7 @@
 This file contains functions for waiting gpus to be ready when there are other
 processes using the requested gpus.
 """
-import os
 import time
-from typing import List
 
 import torch
 

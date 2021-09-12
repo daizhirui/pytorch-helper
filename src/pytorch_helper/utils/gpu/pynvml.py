@@ -675,26 +675,26 @@ class NVMLError(Exception):
     valClassMapping = dict()
     # List of currently known error codes
     _errcode_to_string = {
-        NVML_ERROR_UNINITIALIZED          : "Uninitialized",
-        NVML_ERROR_INVALID_ARGUMENT       : "Invalid Argument",
-        NVML_ERROR_NOT_SUPPORTED          : "Not Supported",
-        NVML_ERROR_NO_PERMISSION          : "Insufficient Permissions",
-        NVML_ERROR_ALREADY_INITIALIZED    : "Already Initialized",
-        NVML_ERROR_NOT_FOUND              : "Not Found",
-        NVML_ERROR_INSUFFICIENT_SIZE      : "Insufficient Size",
-        NVML_ERROR_INSUFFICIENT_POWER     : "Insufficient External Power",
-        NVML_ERROR_DRIVER_NOT_LOADED      : "Driver Not Loaded",
-        NVML_ERROR_TIMEOUT                : "Timeout",
-        NVML_ERROR_IRQ_ISSUE              : "Interrupt Request Issue",
-        NVML_ERROR_LIBRARY_NOT_FOUND      : "NVML Shared Library Not Found",
-        NVML_ERROR_FUNCTION_NOT_FOUND     : "Function Not Found",
-        NVML_ERROR_CORRUPTED_INFOROM      : "Corrupted infoROM",
-        NVML_ERROR_GPU_IS_LOST            : "GPU is lost",
-        NVML_ERROR_RESET_REQUIRED         : "GPU requires restart",
-        NVML_ERROR_OPERATING_SYSTEM       : "The operating system has blocked the request.",
+        NVML_ERROR_UNINITIALIZED: "Uninitialized",
+        NVML_ERROR_INVALID_ARGUMENT: "Invalid Argument",
+        NVML_ERROR_NOT_SUPPORTED: "Not Supported",
+        NVML_ERROR_NO_PERMISSION: "Insufficient Permissions",
+        NVML_ERROR_ALREADY_INITIALIZED: "Already Initialized",
+        NVML_ERROR_NOT_FOUND: "Not Found",
+        NVML_ERROR_INSUFFICIENT_SIZE: "Insufficient Size",
+        NVML_ERROR_INSUFFICIENT_POWER: "Insufficient External Power",
+        NVML_ERROR_DRIVER_NOT_LOADED: "Driver Not Loaded",
+        NVML_ERROR_TIMEOUT: "Timeout",
+        NVML_ERROR_IRQ_ISSUE: "Interrupt Request Issue",
+        NVML_ERROR_LIBRARY_NOT_FOUND: "NVML Shared Library Not Found",
+        NVML_ERROR_FUNCTION_NOT_FOUND: "Function Not Found",
+        NVML_ERROR_CORRUPTED_INFOROM: "Corrupted infoROM",
+        NVML_ERROR_GPU_IS_LOST: "GPU is lost",
+        NVML_ERROR_RESET_REQUIRED: "GPU requires restart",
+        NVML_ERROR_OPERATING_SYSTEM: "The operating system has blocked the request.",
         NVML_ERROR_LIB_RM_VERSION_MISMATCH: "RM has detected an NVML/RM version mismatch.",
-        NVML_ERROR_MEMORY                 : "Insufficient Memory",
-        NVML_ERROR_UNKNOWN                : "Unknown Error",
+        NVML_ERROR_MEMORY: "Insufficient Memory",
+        NVML_ERROR_UNKNOWN: "Unknown Error",
     }
 
     def __new__(cls, value):
@@ -937,10 +937,10 @@ class nvmlPciInfo_v2_t(_PrintableStructure):
         ('reserved3', c_uint),
     ]
     _fmt_ = {
-        'domain'        : "0x%04X",
-        'bus'           : "0x%02X",
-        'device'        : "0x%02X",
-        'pciDeviceId'   : "0x%08X",
+        'domain': "0x%04X",
+        'bus': "0x%02X",
+        'device': "0x%02X",
+        'pciDeviceId': "0x%08X",
         'pciSubSystemId': "0x%08X",
     }
 
@@ -961,10 +961,10 @@ class nvmlPciInfo_t(_PrintableStructure):
         ('busId', c_char * NVML_DEVICE_PCI_BUS_ID_BUFFER_SIZE),
     ]
     _fmt_ = {
-        'domain'        : "0x%08X",
-        'bus'           : "0x%02X",
-        'device'        : "0x%02X",
-        'pciDeviceId'   : "0x%08X",
+        'domain': "0x%08X",
+        'bus': "0x%02X",
+        'device': "0x%02X",
+        'pciDeviceId': "0x%08X",
         'pciSubSystemId': "0x%08X",
     }
 
@@ -2236,9 +2236,9 @@ def nvmlDeviceGetDetailedEccErrors(handle, errorType, counterType):
 
 
 # Added in 4.304
-def nvmlDeviceGetMemoryErrorCounter(handle, errorType, counterType,
-                                    locationType
-                                    ):
+def nvmlDeviceGetMemoryErrorCounter(
+    handle, errorType, counterType, locationType
+):
     c_count = c_ulonglong()
     fn = _nvmlGetFunctionPointer("nvmlDeviceGetMemoryErrorCounter")
     ret = fn(handle,
@@ -2487,8 +2487,9 @@ def nvmlDeviceResetGpuLockedClocks(handle):
 
 
 # Added in 4.304
-def nvmlDeviceSetApplicationsClocks(handle, maxMemClockMHz, maxGraphicsClockMHz
-                                    ):
+def nvmlDeviceSetApplicationsClocks(
+    handle, maxMemClockMHz, maxGraphicsClockMHz
+):
     fn = _nvmlGetFunctionPointer("nvmlDeviceSetApplicationsClocks")
     ret = fn(handle, c_uint(maxMemClockMHz), c_uint(maxGraphicsClockMHz))
     _nvmlCheckReturn(ret)
@@ -2884,8 +2885,9 @@ def nvmlDeviceResetNvLinkUtilizationCounter(device, link, counter):
     return None
 
 
-def nvmlDeviceSetNvLinkUtilizationControl(device, link, counter, control, reset
-                                          ):
+def nvmlDeviceSetNvLinkUtilizationControl(
+    device, link, counter, control, reset
+):
     fn = _nvmlGetFunctionPointer("nvmlDeviceSetNvLinkUtilizationControl")
     ret = fn(device, link, counter, byref(control), reset)
     _nvmlCheckReturn(ret)
@@ -3697,9 +3699,9 @@ def nvmlDeviceGetGpuInstanceRemainingCapacity(device, profileId):
     return c_count.value
 
 
-def nvmlDeviceGetGpuInstancePossiblePlacements(device, profileId, placementsRef,
-                                               countRef
-                                               ):
+def nvmlDeviceGetGpuInstancePossiblePlacements(
+    device, profileId, placementsRef, countRef
+):
     fn = _nvmlGetFunctionPointer("nvmlDeviceGetGpuInstancePossiblePlacements")
     ret = fn(device, profileId, placementsRef, countRef)
     _nvmlCheckReturn(ret)
@@ -3784,9 +3786,9 @@ def nvmlComputeInstanceDestroy(computeInstance):
     return ret
 
 
-def nvmlGpuInstanceGetComputeInstances(gpuInstance, profileId,
-                                       computeInstancesRef, countRef
-                                       ):
+def nvmlGpuInstanceGetComputeInstances(
+    gpuInstance, profileId, computeInstancesRef, countRef
+):
     fn = _nvmlGetFunctionPointer("nvmlGpuInstanceGetComputeInstances")
     ret = fn(gpuInstance, profileId, computeInstancesRef, countRef)
     _nvmlCheckReturn(ret)

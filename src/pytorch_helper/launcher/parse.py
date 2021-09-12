@@ -6,8 +6,8 @@ from typing import Type
 from typing import TypeVar
 from typing import Union
 
-from ..utils.gpu.util import set_cuda_visible_devices
 from ..utils import log
+from ..utils.gpu.util import set_cuda_visible_devices
 from ..utils.log import get_logger
 
 T = TypeVar('T')
@@ -33,6 +33,9 @@ class MainArg:
     img_ext: str
     debug: bool
     debug_size: int
+    profiling: bool
+    profile_tool: str
+    profile_memory: bool
     exit_on_error: bool
 
     def __post_init__(self):
@@ -175,6 +178,19 @@ class MainArg:
             help='Number of samples in each stage dataset for debug'
         )
         group.add_argument(
+            '--profiling', action='store_true',
+            help='If used, will run profiling of a training epoch and exit.'
+        )
+        group.add_argument(
+            '--profile-tool', default='cprofile', type=str,
+            help='Profiling tool to use, cprofile or torch. Default: cprofile.'
+        )
+        group.add_argument(
+            '--profile-memory', action='store_true',
+            help='If used, with profiling the memory usage. Only available with'
+                 ' --profile-tool torch'
+        )
+        group.add_argument(
             '--exit-on-error',
             action='store_true',
             help='If used, exit with code=1 when error level logging appears.'
@@ -184,9 +200,9 @@ class MainArg:
     @classmethod
     def parse(cls: Type[T]) -> T:
         """ Parse arguments from command line, build `MainArg` or its
-        descendent, and do some setups such as setting `os.environ`.
+        descendant, and do some setups such as setting `os.environ`.
 
-        :return: MainArg or its descendent
+        :return: MainArg or its descendant
         """
         parser = cls.get_parser()
         args = parser.parse_args()

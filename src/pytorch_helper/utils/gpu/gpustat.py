@@ -22,7 +22,6 @@ import psutil
 from blessed import Terminal
 from six.moves import cStringIO as StringIO
 
-from .pynvml import NVMLError
 from .pynvml import NVML_TEMPERATURE_GPU
 from .pynvml import nvmlDeviceGetComputeRunningProcesses
 from .pynvml import nvmlDeviceGetCount
@@ -37,8 +36,9 @@ from .pynvml import nvmlDeviceGetMemoryInfo
 from .pynvml import nvmlDeviceGetName
 from .pynvml import nvmlDeviceGetPowerUsage
 from .pynvml import nvmlDeviceGetTemperature
-from .pynvml import nvmlDeviceGetUUID
 from .pynvml import nvmlDeviceGetUtilizationRates
+from .pynvml import nvmlDeviceGetUUID
+from .pynvml import NVMLError
 from .pynvml import nvmlInit
 from .pynvml import nvmlShutdown
 from .pynvml import nvmlSystemGetCudaDriverVersion
@@ -197,27 +197,29 @@ class GPUStat(object):
         """
         return self.entry['processes']
 
-    def print_to(self, fp,
-                 with_colors=True,  # deprecated arg
-                 show_cmd=False,
-                 show_full_cmd=False,
-                 show_user=False,
-                 show_pid=False,
-                 show_fan_speed=None,
-                 show_codec="",
-                 show_power=None,
-                 gpuname_width=16,
-                 term=None,
-                 ):
+    def print_to(
+        self, fp,
+        with_colors=True,  # deprecated arg
+        show_cmd=False,
+        show_full_cmd=False,
+        show_user=False,
+        show_pid=False,
+        show_fan_speed=None,
+        show_codec="",
+        show_power=None,
+        gpuname_width=16,
+        term=None,
+    ):
         if term is None:
             term = Terminal(stream=sys.stdout)
 
         # color settings
         colors = {}
 
-        def _conditional(cond_fn, true_value, false_value,
-                         error_value=term.bold_black
-                         ):
+        def _conditional(
+            cond_fn, true_value, false_value,
+            error_value=term.bold_black
+        ):
             try:
                 return cond_fn() and true_value or false_value
             except Exception:
@@ -526,25 +528,25 @@ class GPUStatCollection(object):
                     process['cpu_percent'] = cache_process.cpu_percent()
 
             _gpu_info = {
-                'index'               : nvmlDeviceGetIndex(_handle),
-                'uuid'                : uuid,
-                'name'                : name,
-                'temperature.gpu'     : temperature,
-                'fan.speed'           : fan_speed,
-                'utilization.gpu'     :
+                'index': nvmlDeviceGetIndex(_handle),
+                'uuid': uuid,
+                'name': name,
+                'temperature.gpu': temperature,
+                'fan.speed': fan_speed,
+                'utilization.gpu':
                     utilization.gpu if utilization else None,
-                'utilization.enc'     :
+                'utilization.enc':
                     utilization_enc[0] if utilization_enc else None,
-                'utilization.dec'     :
+                'utilization.dec':
                     utilization_dec[0] if utilization_dec else None,
-                'power.draw'          :
+                'power.draw':
                     power // 1000 if power is not None else None,
                 'enforced.power.limit': power_limit // 1000
                 if power_limit is not None else None,
                 # Convert bytes into MBytes
-                'memory.used'         : memory.used // MB if memory else None,
-                'memory.total'        : memory.total // MB if memory else None,
-                'processes'           : processes,
+                'memory.used': memory.used // MB if memory else None,
+                'memory.total': memory.total // MB if memory else None,
+                'processes': processes,
             }
             GPUStatCollection.clean_processes()
             return _gpu_info
@@ -595,13 +597,14 @@ class GPUStatCollection(object):
 
     # --- Printing Functions ---
 
-    def print_formatted(self, fp=sys.stdout, force_color=False, no_color=False,
-                        show_cmd=False, show_full_cmd=False, show_user=False,
-                        show_pid=False, show_fan_speed=None,
-                        show_codec="", show_power=None,
-                        gpuname_width=16, show_header=True,
-                        eol_char=os.linesep,
-                        ):
+    def print_formatted(
+        self, fp=sys.stdout, force_color=False, no_color=False,
+        show_cmd=False, show_full_cmd=False, show_user=False,
+        show_pid=False, show_fan_speed=None,
+        show_codec="", show_power=None,
+        gpuname_width=16, show_header=True,
+        eol_char=os.linesep,
+    ):
         # ANSI color configuration
         if force_color and no_color:
             raise ValueError("--color and --no_color can't"
@@ -666,9 +669,9 @@ class GPUStatCollection(object):
 
     def jsonify(self):
         return {
-            'hostname'  : self.hostname,
+            'hostname': self.hostname,
             'query_time': self.query_time,
-            "gpus"      : [g.jsonify() for g in self]
+            "gpus": [g.jsonify() for g in self]
         }
 
     def print_json(self, fp=sys.stdout):

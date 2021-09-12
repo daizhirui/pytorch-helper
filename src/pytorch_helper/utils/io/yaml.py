@@ -74,6 +74,12 @@ def load_yaml(
 
 
 def merge_task_dicts(base: dict, update: dict):
+    if base is None:
+        return update
+
+    if update is None:
+        return base
+
     out = base.copy()
 
     for key, value in update.items():

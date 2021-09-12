@@ -1,6 +1,6 @@
 import os
-from dataclasses import InitVar
 from dataclasses import dataclass
+from dataclasses import InitVar
 from typing import Any
 from typing import Type
 from typing import TypeVar
@@ -47,6 +47,9 @@ class TaskOption(OptionBase):
     for_train: InitVar[bool]
     is_distributed: InitVar[bool]
     print_freq: int = 10
+    profiling: bool = False
+    profile_tool: str = 'cprofile'
+    profile_memory: bool = False
 
     def __post_init__(self, for_train: bool, is_distributed: bool):
         super(TaskOption, self).__post_init__()
@@ -68,6 +71,11 @@ class TaskOption(OptionBase):
             logger.info(
                 'Setup dataset path and output path from option file'
             )
+
+            if self.profiling:
+                self.output_path = os.path.join(
+                    self.output_path, f'profiling-{self.profile_tool}'
+                )
 
             if not os.path.exists(self.dataset_path):
                 raise FileNotFoundError(
@@ -112,7 +120,7 @@ class TaskOption(OptionBase):
 
             if self.src_folder:
                 dst = os.path.join(
-                    self.output_path_pth,
+                    self.output_path_task,
                     os.path.basename(self.src_folder) + '.tar.gz'
                 )
                 make_tar_file(self.src_folder, dst)
@@ -144,11 +152,11 @@ class TaskOption(OptionBase):
         """
         :return: the path of the checkpoint folder
         """
-        return os.path.join(self.output_path_task, 'pth')
+        return os.path.join(self.output_path_task, 'models')
 
     @property
     def output_path_tb(self) -> str:
         """
         :return: the path of tensorboard folder
         """
-        return os.path.join(self.output_path_task, 'tb')
+        return os.path.join(self.output_path_task, 'log')
