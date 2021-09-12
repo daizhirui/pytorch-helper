@@ -137,7 +137,8 @@ class Meter(object):
         else:
             tags = [tag]
         for tag in tags:
-            self.meter_items[tag].reset()
+            if tag in self.meter_items:
+                self.meter_items[tag].reset()
         # if tag is None:
         #     self.data = dict()
         # else:
