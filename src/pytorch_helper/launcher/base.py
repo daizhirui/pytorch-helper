@@ -5,10 +5,11 @@ from typing import List
 from typing import Type
 
 from .parse import MainArg
-from ..settings.options.task import TaskOption, merge_task_dicts
+from ..settings.options.task import TaskOption
 from ..utils.dist import is_distributed
 from ..utils.dist import is_rank0
 from ..utils.dist import synchronize
+from ..utils.io import load_task_option_yaml
 from ..utils.io import load_yaml
 from ..utils.log import get_logger
 
@@ -103,15 +104,7 @@ class Launcher:
                               and distributed.is_available() \
                               and not self.args.use_data_parallel
 
-        task_dict = load_yaml(self.args.task_option_file)
-        if 'base' in task_dict:
-            base_task_option_file = task_dict.pop('base')
-            base_task_option_file = os.path.join(
-                os.path.dirname(self.args.task_option_file),
-                base_task_option_file
-            )
-            base_task_dict = load_yaml(base_task_option_file)
-            task_dict = merge_task_dicts(base_task_dict, task_dict)
+        task_dict = load_task_option_yaml(self.args.task_option_file)
         task_dict = self.modify_task_dict(task_dict)
 
         self.register_func()

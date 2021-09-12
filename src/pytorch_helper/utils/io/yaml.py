@@ -1,10 +1,14 @@
-from ruamel import yaml
 import os
+
+from ruamel import yaml
+
 from .make_dirs import make_dirs_for_file
 from ..log import get_logger
 
 __all__ = [
     'load_yaml',
+    'merge_task_dicts',
+    'load_task_option_yaml',
     'save_yaml'
 ]
 
@@ -67,6 +71,30 @@ def load_yaml(
     a = check_func.get(f'_check_{type(a).__name__}', lambda x: x)(a)
 
     return a
+
+
+def merge_task_dicts(base: dict, update: dict):
+    out = base.copy()
+
+    for key, value in update.items():
+        assert key in base, f'key {key} not found in base dict'
+        if isinstance(value, dict):
+            out[key] = merge_task_dicts(base[key], value)
+        else:
+            out[key] = value
+    return out
+
+
+def load_task_option_yaml(path: str):
+    task_dict = load_yaml(path)
+    if 'base' in task_dict:
+        base_task_option_file = task_dict.pop('base')
+        base_task_option_file = os.path.join(
+            os.path.dirname(path), base_task_option_file
+        )
+        base_task_dict = load_task_option_yaml(base_task_option_file)
+        task_dict = merge_task_dicts(base_task_dict, task_dict)
+    return task_dict
 
 
 def save_yaml(path: str, a: dict):
