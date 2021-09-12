@@ -42,7 +42,7 @@ def imsave(
     :param img_ext: extension of the image file, default png
     """
     if img_ext is None:
-        img_ext = config['img_ext']
+        img_ext = config.img_ext
     path = f'{path}.{img_ext}'
     make_dirs_for_file(path)
 

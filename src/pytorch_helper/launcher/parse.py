@@ -83,7 +83,7 @@ class MainArg:
                 cudnn.benchmark = False
 
         from ..utils import io
-        io.config['img_ext'] = self.img_ext
+        io.config.img_ext = self.img_ext
 
         from ..utils import log
         log.exit_on_error = self.exit_on_error
