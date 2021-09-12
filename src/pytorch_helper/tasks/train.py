@@ -31,7 +31,8 @@ class TrainTask(TaskBase, ABC):
         self.lr_scheduler = self.option.lr_scheduler.build(self.optimizer)
 
         # logging
-        path = os.path.join(self.option.output_path_tb, 'meter_current.pkl')
+        path = f'meter-{"train" if self.option.train else "test"}.pkl'
+        path = os.path.join(self.option.output_path_tb, path)
         if os.path.exists(path) and self.option.resume:
             self.meter = Meter.load(path)
         else:
