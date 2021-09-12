@@ -1601,8 +1601,7 @@ def nvmlSystemGetHicVersion():
     ret = fn(byref(c_count), None)
 
     # this should only fail with insufficient size
-    if ((ret != NVML_SUCCESS) and
-        (ret != NVML_ERROR_INSUFFICIENT_SIZE)):
+    if (ret != NVML_SUCCESS) and (ret != NVML_ERROR_INSUFFICIENT_SIZE):
         raise NVMLError(ret)
 
     # If there are no hics
@@ -2703,8 +2702,7 @@ def nvmlDeviceGetRetiredPages(device, sourceFilter):
     ret = fn(device, c_source, byref(c_count), None)
 
     # this should only fail with insufficient size
-    if ((ret != NVML_SUCCESS) and
-        (ret != NVML_ERROR_INSUFFICIENT_SIZE)):
+    if (ret != NVML_SUCCESS) and (ret != NVML_ERROR_INSUFFICIENT_SIZE):
         raise NVMLError(ret)
 
     # call again with a buffer
@@ -2727,8 +2725,7 @@ def nvmlDeviceGetRetiredPages_v2(device, sourceFilter):
     ret = fn(device, c_source, byref(c_count), None)
 
     # this should only fail with insufficient size
-    if ((ret != NVML_SUCCESS) and
-        (ret != NVML_ERROR_INSUFFICIENT_SIZE)):
+    if (ret != NVML_SUCCESS) and (ret != NVML_ERROR_INSUFFICIENT_SIZE):
         raise NVMLError(ret)
 
     # call again with a buffer

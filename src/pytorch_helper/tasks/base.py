@@ -149,7 +149,7 @@ class TaskBase(LauncherTask, ABC):
             self.STAGE_TEST: 0,
             'all': 0
         }
-        # post init by descendents
+        # post init by descendants
         self.post_init(state_dict)
 
     @property

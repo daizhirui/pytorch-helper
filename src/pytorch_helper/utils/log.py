@@ -1,4 +1,3 @@
-import os
 import sys
 from datetime import datetime
 from logging import CRITICAL
@@ -14,7 +13,9 @@ import colorlog
 from ruamel import yaml
 from tqdm import tqdm
 from tqdm.notebook import tqdm as tqdm_notebook
-from .pre_pytorch_init import get_cuda_visible_devices, ready_for_torch
+
+from .pre_pytorch_init import get_cuda_visible_devices
+from .pre_pytorch_init import ready_for_torch
 
 colorama.init()
 

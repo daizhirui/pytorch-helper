@@ -162,11 +162,11 @@ class TrainTask(TaskBase, ABC):
         valid_summary = self.summarize_logging_after_stage()
         synchronize()
 
-        if self.option.train_setting.valid_on_test > 0 \
-            and epoch % self.option.train_setting.valid_on_test == 0:
-            self._test()
-            self.summarize_logging_after_stage()
-            synchronize()
+        if self.option.train_setting.valid_on_test > 0:
+            if epoch % self.option.train_setting.valid_on_test == 0:
+                self._test()
+                self.summarize_logging_after_stage()
+                synchronize()
 
         return valid_summary
 

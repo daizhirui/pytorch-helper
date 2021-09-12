@@ -1,7 +1,6 @@
 """ Miscellaneous Utilities. """
 
 import os.path
-from typing import List
 
 
 def bytes2human(in_bytes):

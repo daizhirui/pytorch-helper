@@ -2,12 +2,10 @@ import io
 from typing import Any
 from typing import Union
 
-import matplotlib
-import numpy as np
-from PIL import Image
-
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+from PIL import Image
 
 from . import config
 from .make_dirs import make_dirs_for_file
@@ -67,7 +65,8 @@ def plt_figure_to_numpy(figure: plt.Figure = None) -> np.ndarray:
     """
     if figure is None:
         figure = plt.gcf()
-    figure.canvas.draw()
+    agg = figure.canvas.switch_backends(FigureCanvasAgg)
+    agg.draw()
 
     arr = np.array(figure.canvas.renderer.buffer_rgba())
     return arr
@@ -81,7 +80,8 @@ def plt_figure_to_pil(figure: plt.Figure = None) -> Image:
     """
     if figure is None:
         figure = plt.gcf()
-    figure.canvas.draw()
+    agg = figure.canvas.switch_backends(FigureCanvasAgg)
+    agg.draw()
 
     buf = io.BytesIO()
     figure.savefig(buf)

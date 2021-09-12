@@ -5,13 +5,12 @@ from typing import Dict
 from typing import Hashable
 from typing import Union
 
-from .pre_pytorch_init import ready_for_torch
-
-ready_for_torch(assert_=True)
-
 import torch
 import torch.distributed as pt_dist
 
+from .pre_pytorch_init import ready_for_torch
+
+ready_for_torch(assert_=True)
 ReduceOp = getattr(pt_dist, 'ReduceOp')
 
 

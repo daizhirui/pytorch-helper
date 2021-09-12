@@ -16,9 +16,12 @@ class Tester(Launcher):
             task_dict['model']['pth_path'] = self.args.pth_path
 
         # dataset path
-        if not os.path.exists(task_dict['dataset_path']) or \
-            self.args.dataset_path is not None:
+        if self.args.dataset_path is not None:
             task_dict['dataset_path'] = self.args.dataset_path
+        if not os.path.exists(task_dict['dataset_path']):
+            raise FileNotFoundError(
+                f'{task_dict["dataset_path"]} does not exist.'
+            )
 
         # output path
         if self.args.output_path is not None:
