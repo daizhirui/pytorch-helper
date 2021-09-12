@@ -1,7 +1,5 @@
 from dataclasses import dataclass
 
-import torch
-
 from .base import OptionBase
 
 __all__ = ['LRSchedulerOption']
@@ -21,5 +19,7 @@ class LRSchedulerOption(OptionBase):
         """
         if not self.enable:
             return None
+        
+        import torch
         builder = getattr(torch.optim.lr_scheduler, self.name)
         return builder(optimizer, **self.kwargs)

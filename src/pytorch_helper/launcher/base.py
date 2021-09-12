@@ -6,9 +6,6 @@ from typing import Type
 
 from .parse import MainArg
 from ..settings.options.task import TaskOption
-from ..utils.dist import is_distributed
-from ..utils.dist import is_rank0
-from ..utils.dist import synchronize
 from ..utils.io import load_task_option_yaml
 from ..utils.io import load_yaml
 from ..utils.log import get_logger
@@ -63,6 +60,7 @@ def run_task(
         wait_gpus(OrderedDict(
             (x, main_args.cuda_device_mapping[x]) for x in cuda_ids
         ))
+    from ..utils.dist import synchronize
     synchronize()
 
     register_func()
@@ -79,9 +77,12 @@ def run_task(
         else:
             raise e
     finally:
+        from ..utils.dist import is_rank0
         if is_rank0() and task.option.train:
             logger.info('backup the task')
             task.backup(immediate=True, resumable=True)
+
+        from ..utils.dist import is_distributed
         if is_distributed():
             from torch.distributed import destroy_process_group
             destroy_process_group()

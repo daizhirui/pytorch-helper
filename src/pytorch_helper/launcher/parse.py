@@ -6,9 +6,8 @@ from typing import Type
 from typing import TypeVar
 from typing import Union
 
-from ..utils import log
-from ..utils.gpu.util import set_cuda_visible_devices
 from ..utils.log import get_logger
+from ..utils.pre_pytorch_init import set_cuda_visible_devices
 
 T = TypeVar('T')
 
@@ -58,7 +57,6 @@ class MainArg:
 
         os.environ['DEBUG'] = '1' if self.debug else '0'
         os.environ['DEBUG_SIZE'] = str(self.debug_size)
-        log.exit_on_error = self.exit_on_error
 
         if not self.boost:
             # this make RNN training more deterministic
@@ -84,8 +82,11 @@ class MainArg:
                 cudnn.deterministic = True
                 cudnn.benchmark = False
 
-        from pytorch_helper.utils import io
+        from ..utils import io
         io.config['img_ext'] = self.img_ext
+
+        from ..utils import log
+        log.exit_on_error = self.exit_on_error
 
     @staticmethod
     def get_parser() -> ArgumentParser:

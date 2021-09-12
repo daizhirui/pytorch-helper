@@ -11,13 +11,10 @@ from typing import Iterable
 
 import colorama
 import colorlog
-import torch.cuda
-import torch.distributed as pt_dist
 from ruamel import yaml
 from tqdm import tqdm
 from tqdm.notebook import tqdm as tqdm_notebook
-
-from pytorch_helper.utils.dist import is_distributed
+from .pre_pytorch_init import get_cuda_visible_devices, ready_for_torch
 
 colorama.init()
 
@@ -120,9 +117,17 @@ def pretty_dict(a: dict) -> str:
 def _get_device() -> str:
     """ get the str of current GPU device
     """
+    if not ready_for_torch():
+        # should not import torch yet
+        return 'CPU'
+
+    import torch.cuda
+    import torch.distributed as pt_dist
+    from .dist import is_distributed
+
     device = ''
     try:
-        visible_devices = os.environ['CUDA_VISIBLE_DEVICES'].split(',')
+        visible_devices = get_cuda_visible_devices()
         if is_distributed():
             rank = pt_dist.get_rank()
             gpu_id = visible_devices[rank]

@@ -3,8 +3,6 @@ from dataclasses import dataclass
 from typing import Optional
 from typing import Tuple
 
-from torch.nn.modules import Module
-
 from .base import OptionBase
 from ..space import Spaces
 from ...utils.io import load_pth
@@ -40,7 +38,7 @@ class ModelOption(OptionBase):
                 )
         return False
 
-    def build(self) -> Tuple[Module, Optional[dict]]:
+    def build(self):  # -> Tuple[Module, Optional[dict]]:
         """ build the model and load the weights from the checkpoint if
         `self.pth_available` is True.
 
