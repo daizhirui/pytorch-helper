@@ -11,6 +11,7 @@ from . import config
 from .make_dirs import make_dirs_for_file
 from ..log import get_logger
 
+
 __all__ = [
     'imread',
     'imsave',
@@ -54,7 +55,8 @@ def imsave(
         if np.max(arr) <= 1:
             arr = (arr * 255).astype(np.uint8)
         Image.fromarray(arr).save(path)
-    logger.info(f'Save {path}')
+    if not config.silent:
+        logger.info(f'Save {path}')
 
 
 def plt_figure_to_numpy(figure: plt.Figure = None) -> np.ndarray:
