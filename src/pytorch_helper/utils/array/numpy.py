@@ -5,7 +5,8 @@ from numpy import ndarray
 from torch import Tensor
 
 __all__ = [
-    'to_numpy'
+    'to_numpy',
+    'unfold'
 ]
 
 
