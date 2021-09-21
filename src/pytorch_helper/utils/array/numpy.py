@@ -22,3 +22,36 @@ def to_numpy(arr: Union[ndarray, Tensor], np_type=np.float32) -> ndarray:
         return arr.data.cpu().numpy().astype(np_type)
     else:
         return np.array(arr, dtype=np_type)
+
+
+def unfold(a, axis, size, step):
+    """Numpy version of ``torch.Tensor.unfold``.
+
+    Parameters
+    ----------
+    a: numpy.ndarray
+        Numpy array of shape (N1, N2, .., Nk)
+    axis: int
+        The axis in which unfolding happens.
+    size: int
+        The size of each slice that is unfolded.
+    step: int
+        The step between each slice.
+
+    Returns
+    -------
+    unfolded_a: numpy.array
+        Unfolded version of ``a``, whose shape is (N1, N2, .., Nk, M), where
+        ``M = int((axis_size - size) / step + 1)``.
+    """
+    idx = np.arange(0, a.shape[axis] - size + 1, step)
+    shape = np.ones(a.ndim, dtype=int)
+    shape[axis] = idx.size
+    idx = idx.reshape(shape)
+
+    out = [np.take_along_axis(a, idx, axis)]
+    for i in range(1, size):
+        out.append(np.take_along_axis(a, idx + i, axis))
+
+    out = np.stack(out, -1)
+    return out
