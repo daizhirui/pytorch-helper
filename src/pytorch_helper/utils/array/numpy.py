@@ -31,7 +31,7 @@ def unfold(a, axis, size, step):
     Parameters
     ----------
     a: numpy.ndarray
-        Numpy array of shape (N1, N2, .., Nk)
+        Numpy array of shape (N1, .., Ni, .., Nk)
     axis: int
         The axis in which unfolding happens.
     size: int
@@ -42,8 +42,8 @@ def unfold(a, axis, size, step):
     Returns
     -------
     unfolded_a: numpy.array
-        Unfolded version of ``a``, whose shape is (N1, N2, .., Nk, M), where
-        ``M = int((axis_size - size) / step + 1)``.
+        Unfolded version of ``a``, whose shape is (N1, .., M, .., Nk, size),
+        where ``M = int((axis_size - size) / step + 1)``.
     """
     idx = np.arange(0, a.shape[axis] - size + 1, step)
     shape = np.ones(a.ndim, dtype=int)
