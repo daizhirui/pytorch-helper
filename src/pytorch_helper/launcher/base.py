@@ -114,9 +114,6 @@ class Launcher:
 
         self.register_func()
 
-        from ..settings.options import OptionBase
-        OptionBase.option_file_dir = os.path.dirname(self.args.task_option_file)
-
         from ..settings.space import Spaces
         self.task_option = Spaces.build_task_option(task_dict)
         print(self.task_option)
@@ -137,7 +134,6 @@ class Launcher:
             task_dict['output_path'] = self.args.output_path
         task_dict['is_distributed'] = self.is_distributed
 
-        task_dict['test_option'] = None
         if self.args.test_option_file:
             if not os.path.isfile(self.args.test_option_file):
                 raise FileNotFoundError(

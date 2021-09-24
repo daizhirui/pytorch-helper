@@ -21,7 +21,6 @@ class TrainSettingOption(OptionBase):
     gradient_explosion_threshold: float = 1e5
 
     def __post_init__(self):
-        super(TrainSettingOption, self).__post_init__()
         self.train_routines = [
             TrainRoutine(**r) for r in self.train_routines
         ]

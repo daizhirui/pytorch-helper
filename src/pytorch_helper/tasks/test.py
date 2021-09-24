@@ -1,6 +1,7 @@
 import os
 from abc import ABC
 from collections import OrderedDict
+from collections import defaultdict
 
 import numpy as np
 import torch
@@ -28,7 +29,7 @@ class TestTask(TrainTask, ABC):
 
         self.keep_model_output = True
         self.cur_stage = self.STAGE_TEST
-        self.model_output_dict = dict()
+        self.model_output_dict = defaultdict(list)
         self.datetime_test = get_datetime()
 
     def post_init(self, state_dict):
@@ -43,7 +44,7 @@ class TestTask(TrainTask, ABC):
             self.epoch = state_dict.get('epoch', -1)
 
         self.output_path_test = os.path.realpath(os.path.join(
-            self.option.output_path_pth, '..', 'test'
+            self.option.output_path_task, 'test'
         ))
         make_dirs(self.output_path_test)
 
@@ -53,16 +54,19 @@ class TestTask(TrainTask, ABC):
             if isinstance(model_output, dict):
                 for key, data in model_output.items():
                     if data is not None:
-                        self.model_output_dict.setdefault(key, list()).append(
-                            data.cpu().numpy()
-                        )
+                        self.model_output_dict[key].append(data.cpu().numpy())
+                        # self.model_output_dict.setdefault(key, list()).append(
+                        #     data.cpu().numpy()
+                        # )
             elif isinstance(model_output, torch.Tensor):
-                self.model_output_dict.setdefault('output', list()).append(
+                self.model_output_dict['output'].append(
                     model_output.cpu().numpy()
                 )
+                # self.model_output_dict.setdefault('output', list()).append(
+                #     model_output.cpu().numpy()
+                # )
             else:
                 logger.warn(
-
                     f'unable to save model output of type {type(model_output)}'
                 )
         super(TestTask, self).update_logging_in_stage(result)
@@ -73,15 +77,19 @@ class TestTask(TrainTask, ABC):
         super(TestTask, self).setup_before_stage()
 
     def run(self):
-        self._test()
-        summary = self.summarize_logging_after_stage()
-        if self.is_rank0:
-            path = os.path.join(self.output_path_test, 'test-summary.csv')
-            save_dict_as_csv(path, summary)
-        synchronize()
+        with pbar(bar_format='{desc}') as t:
+            t.set_description(
+                f'{self.option.name} | {self.option.output_path_task}'
+            )
+            self._test()
+            summary = self.summarize_logging_after_stage()
+            if self.is_rank0:
+                path = os.path.join(self.output_path_test, 'test-summary.csv')
+                save_dict_as_csv(path, summary)
+            synchronize()
 
-        for key, value in self.model_output_dict.items():
-            self.model_output_dict[key] = np.concatenate(value, axis=0)
+            for key, value in self.model_output_dict.items():
+                self.model_output_dict[key] = np.concatenate(value, axis=0)
 
         return summary
 

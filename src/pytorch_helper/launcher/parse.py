@@ -59,9 +59,10 @@ class MainArg:
         os.environ['DEBUG_SIZE'] = str(self.debug_size)
 
         if not self.boost:
-            # this make RNN training more deterministic
-            # see https://pytorch.org/docs/stable/generated/torch.nn.LSTM.html
-            # and https://pytorch.org/docs/stable/generated/torch.use_deterministic_algorithms.html
+            """this make RNN training more deterministic
+            see https://pytorch.org/docs/stable/generated/torch.nn.LSTM.html
+            and https://pytorch.org/docs/stable/generated/torch.use_determinis
+            tic_algorithms.html"""
             os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
             os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
 
@@ -112,7 +113,7 @@ class MainArg:
         )
         group.add_argument(
             '--use-gpus',
-            nargs='+', required=True, type=int, metavar='GPU_INDEX',
+            nargs='+', default=[0], type=int, metavar='GPU_INDEX',
             help='Indices of GPUs for training'
         )
         group.add_argument(

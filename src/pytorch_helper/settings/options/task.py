@@ -43,16 +43,15 @@ class TaskOption(OptionBase):
     lr_scheduler: Union[dict, LRSchedulerOption]
     src_folder: str
     resume: bool
-    test_option: Any
     for_train: InitVar[bool]
     is_distributed: InitVar[bool]
+    test_option: Any = None
     print_freq: int = 10
     profiling: bool = False
     profile_tool: str = 'cprofile'
     profile_memory: bool = False
 
     def __post_init__(self, for_train: bool, is_distributed: bool):
-        super(TaskOption, self).__post_init__()
         self.cuda_ids = None
         self.train = for_train
 

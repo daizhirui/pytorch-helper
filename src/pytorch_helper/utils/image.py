@@ -68,6 +68,7 @@ def overlay_images(
 
     for i in range(1, len(images)):
         out += to_numpy(images[i]) * weights[i]
+    out = np.clip(out, a_min=0, a_max=1)
 
     if isinstance(images[0], Tensor):
         out = torch.tensor(out)

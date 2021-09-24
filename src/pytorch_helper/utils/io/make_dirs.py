@@ -14,4 +14,7 @@ def make_dirs_for_file(path: str):
 
     :param path: str of the file
     """
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    dir_path = os.path.dirname(path)
+    if len(dir_path) == 0:
+        dir_path = os.curdir
+    os.makedirs(dir_path, exist_ok=True)

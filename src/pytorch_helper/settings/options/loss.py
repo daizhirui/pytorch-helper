@@ -12,7 +12,6 @@ class LossOption(OptionBase):
     kwargs: dict
 
     def __post_init__(self):
-        super(LossOption, self).__post_init__()
         if self.kwargs is None:
             self.kwargs = dict()
 

@@ -13,6 +13,7 @@ requires = [
     'colorama',
     'colorlog',
     'psutil',
+    'ruamel.yaml',
     'tensorboard',
     'tensorboardX',
     'torch_tb_profiler',
