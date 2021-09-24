@@ -67,8 +67,14 @@ def run_task(
     from pytorch_helper.settings.space import Spaces
     task_option.cuda_ids = cuda_ids
     task: LauncherTask = Spaces.build_task(task_option)
+
     try:
-        task.run()
+        from pytorch_helper.utils.log import pbar
+        with pbar(bar_format='{desc}') as t:
+            t.set_description(
+                f'{task.option.name} | {task.option.output_path_task}'
+            )
+            task.run()
     except Exception as e:
         if main_args.profiling:
             if not isinstance(e, KeyboardInterrupt):
@@ -105,9 +111,8 @@ class Launcher:
         self.for_train = for_train
 
         from torch import distributed
-        self.is_distributed = len(self.args.use_gpus) > 1 \
-                              and distributed.is_available() \
-                              and not self.args.use_data_parallel
+        self.is_distributed = len(self.args.use_gpus) > 1 and \
+            distributed.is_available() and not self.args.use_data_parallel
 
         task_dict = load_task_option_yaml(self.args.task_option_file)
         task_dict = self.modify_task_dict(task_dict)

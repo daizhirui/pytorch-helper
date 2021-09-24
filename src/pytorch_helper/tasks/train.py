@@ -258,21 +258,16 @@ class TrainTask(TaskBase, ABC):
 
             exit(0)
 
-        with pbar(bar_format='{desc}') as t:
-            t.set_description(
-                f'{self.option.name} | {self.option.output_path_task}'
-            )
-
-            for epoch in range(self.epoch, self.option.train_setting.epochs):
-                if self.is_rank0 and self.tboard is not None:
-                    lr = self.optimizer.param_groups[0]['lr']
-                    self.tboard.add_scalar('learning-rate', lr, self.epoch)
-                # NOTE: different stage should not share the same set of keys
-                self.meter.reset_tags(self.in_stage_meter_keys)
-                valid_summary = self.one_epoch(epoch)
-                self.after_epoch(valid_summary)
-            # save only the state dicts of model and loss_fn
-            self.save_pth('model_final', resumable=False)
+        for epoch in range(self.epoch, self.option.train_setting.epochs):
+            if self.is_rank0 and self.tboard is not None:
+                lr = self.optimizer.param_groups[0]['lr']
+                self.tboard.add_scalar('learning-rate', lr, self.epoch)
+            # NOTE: different stage should not share the same set of keys
+            self.meter.reset_tags(self.in_stage_meter_keys)
+            valid_summary = self.one_epoch(epoch)
+            self.after_epoch(valid_summary)
+        # save only the state dicts of model and loss_fn
+        self.save_pth('model_final', resumable=False)
 
     def setup_before_stage(self):
         """ do some setup before a stage, training, validation or testing.
