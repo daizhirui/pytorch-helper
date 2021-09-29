@@ -1,17 +1,18 @@
 from dataclasses import dataclass
 
 from .base import OptionBase
-from ..space import Spaces
 
 __all__ = ['MetricOption']
 
 
 @dataclass()
 class MetricOption(OptionBase):
-    name: str
+    ref: str
     kwargs: dict
 
     def build(self):
         """ build a metric for test
         """
-        return Spaces.build_metric(self.name, **self.kwargs)
+        from ..spaces import Spaces
+        return Spaces.build(Spaces.NAME.METRIC, self.ref, **self.kwargs)
+        # return Spaces.build_metric(self.name, **self.kwargs)

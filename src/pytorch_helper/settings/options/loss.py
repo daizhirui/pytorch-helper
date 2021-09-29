@@ -1,14 +1,13 @@
 from dataclasses import dataclass
 
 from .base import OptionBase
-from ..space import Spaces
 
 __all__ = ['LossOption']
 
 
 @dataclass()
 class LossOption(OptionBase):
-    name: str
+    ref: str
     kwargs: dict
 
     def __post_init__(self):
@@ -18,4 +17,5 @@ class LossOption(OptionBase):
     def build(self):
         """ build loss function
         """
-        return Spaces.build_loss_fn(self.name, **self.kwargs)
+        from ..spaces import Spaces
+        return Spaces.build(Spaces.NAME.LOSS_FN, self.ref, **self.kwargs)

@@ -40,7 +40,7 @@ class TrainSettingOption(OptionBase):
         for r in self.train_routines:
             if epoch < r.epochs:
                 r.new_routine = epoch == last_epoch
-                r.optimizer_reset = r.new_routine
+                r.optimizer_reset = r.optimizer_reset and r.new_routine
                 return r
             else:
                 last_epoch = r.epochs

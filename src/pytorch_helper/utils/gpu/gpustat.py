@@ -5,10 +5,10 @@
 The original version of this file is from https://github.com/wookayin/gpustat
 Thanks to the author of gpustat, Jongwook Choi
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+# from __future__ import absolute_import
+# from __future__ import division
+# from __future__ import print_function
+# from __future__ import unicode_literals
 
 import json
 import locale
@@ -93,7 +93,7 @@ class GPUStat(object):
     @property
     def name(self):
         """
-        Returns the name of GPU card (e.g. Geforce Titan X)
+        Returns the name of GPU card (e.g. GeForce Titan X)
         """
         return self.entry['name']
 
@@ -130,7 +130,7 @@ class GPUStat(object):
     @property
     def temperature(self):
         """
-        Returns the temperature (in celcius) of GPU as an integer,
+        Returns the temperature (in Celsius) of GPU as an integer,
         or None if the information is not available.
         """
         v = self.entry['temperature.gpu']
@@ -261,7 +261,7 @@ class GPUStat(object):
             for k in list(colors.keys()):
                 colors[k] = ''
 
-        def _repr(v, none_value='??'):
+        def _repr(v, none_value):
             return none_value if v is None else v
 
         # build one-line display information
@@ -298,8 +298,10 @@ class GPUStat(object):
         reps += " | %(C1)s%(CMemU)s{entry[memory.used]:>5}%(C0)s " \
                 "/ %(CMemT)s{entry[memory.total]:>5}%(C0)s MB"
         reps = reps % colors
-        reps = reps.format(entry={k: _repr(v) for k, v in self.entry.items()},
-                           gpuname_width=gpuname_width)
+        reps = reps.format(
+            entry={k: _repr(v, '??') for k, v in self.entry.items()},
+            gpuname_width=gpuname_width
+        )
         reps += " |"
 
         def process_repr(_p):
@@ -513,7 +515,7 @@ class GPUStatCollection(object):
                         # e.g. nvidia-smi reset  or  reboot the system
                         pass
                     except FileNotFoundError:
-                        # Ignore the exception which probably has occured
+                        # Ignore the exception which probably has occurred
                         # from psutil, due to a non-existent PID (see #95).
                         # The exception should have been translated, but
                         # there appears to be a bug of psutil. It is unlikely
@@ -617,7 +619,7 @@ class GPUStatCollection(object):
             # workaround of issue #32 (watch doesn't recognize sgr0 characters)
             t_color._normal = u'\x1b[0;10m'
         elif no_color:
-            t_color = Terminal(force_styling=None)
+            t_color = Terminal(force_styling=False)
         else:
             t_color = Terminal()  # auto, depending on isatty
 
@@ -629,20 +631,20 @@ class GPUStatCollection(object):
         if show_header:
             if IS_WINDOWS:
                 # no localization is available; just use a reasonable default
-                # same as str(timestr) but without ms
-                timestr = self.query_time.strftime('%Y-%m-%d %H:%M:%S')
+                # same as str(time_str) but without ms
+                time_str = self.query_time.strftime('%Y-%m-%d %H:%M:%S')
             else:
                 time_format = locale.nl_langinfo(locale.D_T_FMT)
-                timestr = self.query_time.strftime(time_format)
+                time_str = self.query_time.strftime(time_format)
             header_template = '{t.bold_white}{hostname:{width}}{t.normal}  '
-            header_template += '{timestr}  '
+            header_template += '{time_str}  '
             header_template += '{t.bold_black}Driver:{driver_version}{t.normal}'
             header_template += '  {t.bold_black}CUDA:{cuda_version}{t.normal}'
 
             header_msg = header_template.format(
                 hostname=self.hostname,
                 width=gpuname_width + 3,  # len("[?]")
-                timestr=timestr,
+                time_str=time_str,
                 driver_version=self.driver_version,
                 cuda_version=self.cuda_version,
                 t=t_color,

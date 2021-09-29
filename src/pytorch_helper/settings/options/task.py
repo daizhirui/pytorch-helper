@@ -30,7 +30,7 @@ logger = get_logger(__name__)
 @dataclass()
 class TaskOption(OptionBase):
     name: str
-    type: str
+    ref: str
     datetime: str
     notes: str
     output_path: str
@@ -54,6 +54,7 @@ class TaskOption(OptionBase):
     def __post_init__(self, for_train: bool, is_distributed: bool):
         self.cuda_ids = None
         self.train = for_train
+        self.distributed = is_distributed
 
         if 'DATASET_PATH' in os.environ and 'OUTPUT_PATH' in os.environ:
             logger.info(
@@ -92,7 +93,7 @@ class TaskOption(OptionBase):
         if isinstance(self.dataloader, dict):
             self.dataloader['kwargs']['root'] = self.dataset_path
             self.dataloader['kwargs']['use_ddp'] = is_distributed
-            self.dataloader = DataloaderOption.load_from_dict(self.dataloader)
+            self.dataloader = DataloaderOption.from_dict(self.dataloader)
 
         self.loss = self.load_option(self.loss, LossOption)
         self.optimizer = self.load_option(self.optimizer, OptimizerOption)
@@ -159,3 +160,7 @@ class TaskOption(OptionBase):
         :return: the path of tensorboard folder
         """
         return os.path.join(self.output_path_task, 'log')
+
+    @property
+    def output_path_test(self):
+        return os.path.join(self.output_path_task, 'test')

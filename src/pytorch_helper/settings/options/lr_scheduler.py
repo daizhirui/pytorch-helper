@@ -8,7 +8,7 @@ __all__ = ['LRSchedulerOption']
 @dataclass()
 class LRSchedulerOption(OptionBase):
     enable: bool
-    name: str
+    ref: str
     kwargs: dict
 
     def build(self, optimizer):
@@ -21,5 +21,5 @@ class LRSchedulerOption(OptionBase):
             return None
 
         import torch
-        builder = getattr(torch.optim.lr_scheduler, self.name)
+        builder = getattr(torch.optim.lr_scheduler, self.ref)
         return builder(optimizer, **self.kwargs)

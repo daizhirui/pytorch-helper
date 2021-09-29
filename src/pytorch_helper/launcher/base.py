@@ -64,9 +64,18 @@ def run_task(
     synchronize()
 
     register_func()
-    from pytorch_helper.settings.space import Spaces
+    from pytorch_helper.settings.spaces import Spaces
+
+    if task_option.train:
+        space = Spaces.NAME.TASK_FOR_TRAIN
+    else:
+        space = Spaces.NAME.TASK_FOR_TEST
+
     task_option.cuda_ids = cuda_ids
-    task: LauncherTask = Spaces.build_task(task_option)
+    task: LauncherTask = Spaces.build(
+        space, task_option.ref, task_option
+    )
+    # task: LauncherTask = Spaces.build_task(task_option)
 
     try:
         from pytorch_helper.utils.log import pbar
@@ -111,16 +120,22 @@ class Launcher:
         self.for_train = for_train
 
         from torch import distributed
-        self.is_distributed = len(self.args.use_gpus) > 1 and \
-            distributed.is_available() and not self.args.use_data_parallel
+        self.is_distributed = False
+        if distributed.is_available():
+            if len(self.args.use_gpus) > 1:
+                if not self.args.use_data_parallel:
+                    self.is_distributed = True
 
         task_dict = load_task_option_yaml(self.args.task_option_file)
         task_dict = self.modify_task_dict(task_dict)
 
         self.register_func()
 
-        from ..settings.space import Spaces
-        self.task_option = Spaces.build_task_option(task_dict)
+        from ..settings.spaces import Spaces
+        self.task_option = Spaces.build(
+            Spaces.NAME.TASK_OPTION, task_dict['ref'], **task_dict
+        )
+        # self.task_option = Spaces.build_task_option(task_dict)
         print(self.task_option)
 
     def modify_task_dict(self, task_dict: dict) -> dict:

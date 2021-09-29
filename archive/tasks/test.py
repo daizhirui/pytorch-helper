@@ -6,8 +6,8 @@ from collections import defaultdict
 import numpy as np
 import torch
 
-from .base import BatchPack
-from .train import TrainTask
+from .base import Batch
+from .train import Task
 from ..settings.options.train_routine import TrainRoutine
 from ..utils.dist import synchronize
 from ..utils.io import make_dirs
@@ -21,34 +21,34 @@ __all__ = ['TestTask']
 logger = get_logger(__name__)
 
 
-class TestTask(TrainTask, ABC):
+class TestTask(Task, ABC):
 
     def __init__(self, task_option):
-        self.output_path_test = None
+        # self.output_path_test = None
         super(TestTask, self).__init__(task_option)
 
-        self.keep_model_output = True
+        # self.keep_model_output = True
         self.cur_stage = self.STAGE_TEST
-        self.model_output_dict = defaultdict(list)
-        self.datetime_test = get_datetime()
+        # self.model_output_dict = defaultdict(list)
+        # self.datetime_test = get_datetime()
 
-    def post_init(self, state_dict):
-        if self.is_rank0:
-            # progress bar
-            self.progress_bars = {
-                self.STAGE_TEST: pbar(position=0, desc=' Test')
-            }
+    # def post_init(self, state_dict):
+    #     if self.is_rank0:
+    #         # progress bar
+    #         self.progress_bars = {
+    #             self.STAGE_TEST: pbar(position=0, desc=' Test')
+    #         }
+    #
+    #     self.epoch = -1
+    #     if state_dict is not None:
+    #         self.epoch = state_dict.get('epoch', -1)
+    #
+    #     self.output_path_test = os.path.realpath(os.path.join(
+    #         self.option.output_path_task, 'test'
+    #     ))
+    #     make_dirs(self.output_path_test)
 
-        self.epoch = -1
-        if state_dict is not None:
-            self.epoch = state_dict.get('epoch', -1)
-
-        self.output_path_test = os.path.realpath(os.path.join(
-            self.option.output_path_task, 'test'
-        ))
-        make_dirs(self.output_path_test)
-
-    def update_logging_in_stage(self, result: BatchPack):
+    def update_logging_in_stage(self, result: Batch):
         if self.keep_model_output:
             model_output = result.pred
             if isinstance(model_output, dict):

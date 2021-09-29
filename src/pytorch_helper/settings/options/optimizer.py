@@ -9,7 +9,7 @@ __all__ = ['OptimizerOption']
 
 @dataclass()
 class OptimizerOption(OptionBase):
-    name: str
+    ref: str
     kwargs: dict
 
     def build(self, model):
@@ -19,7 +19,7 @@ class OptimizerOption(OptionBase):
             whose `requires_grad` is True will be posted to the optimizer
         :return: the optimizer
         """
-        builder = getattr(torch.optim, self.name)
+        builder = getattr(torch.optim, self.ref)
         return builder(
             filter(lambda p: p.requires_grad, model.parameters()), **self.kwargs
         )

@@ -5,7 +5,7 @@ from typing import TypeVar
 
 import ruamel.yaml as yaml
 
-from ...utils.io import save_yaml
+from ...utils.io import save_yaml, load_yaml
 from ...utils.log import get_logger
 
 T = TypeVar('T')
@@ -16,11 +16,10 @@ logger = get_logger(__name__)
 
 
 class _Base:
-    # option_file_dir: str = None
 
     # implement class methods
     @classmethod
-    def load_from_dict(cls: Type[T], option_dict: dict, **kwargs) -> T:
+    def from_dict(cls: Type[T], option_dict: dict, **kwargs) -> T:
         """ Build option from a dict of arguments
 
         :param option_dict: Dict of arguments
@@ -34,7 +33,7 @@ class _Base:
         return cls(**option_dict)
 
     @classmethod
-    def load_from_file(cls: Type[T], option_file: str, **kwargs) -> T:
+    def from_file(cls: Type[T], option_file: str, **kwargs) -> T:
         """ Build option from a yaml file
 
         :param option_file: Path to the yaml file
@@ -43,8 +42,9 @@ class _Base:
         """
         if option_file is None:
             return None
-        with open(option_file, 'r') as file:
-            option_dict: dict = yaml.safe_load(file)
+        # with open(option_file, 'r') as file:
+        #     option_dict: dict = yaml.safe_load(file)
+        option_dict = load_yaml(option_file)
         option_dict.update(kwargs)
         logger.info(f'create {cls.__name__} from file {option_file}')
         return cls(**option_dict)

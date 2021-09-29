@@ -2,8 +2,7 @@ import os
 from dataclasses import dataclass
 
 from .base import OptionBase
-from ..space import Spaces
-from ...utils.io import load_pth
+
 from ...utils.log import get_logger
 
 __all__ = ['ModelOption']
@@ -13,7 +12,7 @@ logger = get_logger(__name__)
 
 @dataclass()
 class ModelOption(OptionBase):
-    name: str
+    ref: str
     kwargs: dict
     pth_path: str
 
@@ -42,7 +41,11 @@ class ModelOption(OptionBase):
 
         :return: model and state_dict
         """
-        model = Spaces.build_model(self.name, **self.kwargs)
+        from ..spaces import Spaces
+        from ...utils.io import load_pth
+
+        model = Spaces.build(Spaces.NAME.MODEL, self.ref, **self.kwargs)
+        # model = Spaces.build_model(self.name, **self.kwargs)
         logger.info(f'Build {type(model).__name__}')
 
         state_dict = None
