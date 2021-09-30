@@ -18,4 +18,4 @@ class LossOption(OptionBase):
         """ build loss function
         """
         from ..spaces import Spaces
-        return Spaces.build(Spaces.NAME.LOSS_FN, self.ref, **self.kwargs)
+        return Spaces.build(Spaces.NAME.LOSS_FN, self.ref, self.kwargs)

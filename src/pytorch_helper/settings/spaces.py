@@ -1,5 +1,9 @@
+from collections import Iterable
 from collections import defaultdict
 from enum import Enum
+from ..utils.log import get_logger
+
+logger = get_logger(__name__)
 
 
 class Spaces:
@@ -11,7 +15,7 @@ class Spaces:
         LOSS_FN = 'loss_fn'
         METRIC = 'metric'
         TASK_OPTION = 'task_option'
-        TASK_FOR_TRAIN = 'task_for_train'
+        TASK = 'task_for_train'
         TASK_FOR_TEST = 'task_for_test'
 
     def __init_subclass__(cls, **kwargs):
@@ -29,12 +33,31 @@ class Spaces:
         cls.NAME = Enum('NAME', a)
 
     @staticmethod
-    def build(space, ref, *args, **kwargs):
+    def build(space, ref, kwargs):
         space = Spaces.NAME(space)
-        return Spaces._registry[space][ref](*args, **kwargs)
+        logger.info(f'build in {space} Space with reference: {ref}')
+        return Spaces._registry[space][ref](**kwargs)
 
     @staticmethod
-    def register(cls, spaces, refs):
-        for space, ref in zip(spaces, refs):
-            space = Spaces.NAME(space)
-            Spaces._registry[space][ref] = cls
+    def register(spaces, refs):
+
+        if isinstance(refs, str):
+            refs = [refs]
+
+        if isinstance(spaces, Spaces.NAME):
+            spaces = [spaces] * len(refs)
+        elif not isinstance(spaces, Iterable):
+            raise ValueError(f'{spaces} should be a {Spaces.NAME} or a list '
+                             f'of {Spaces.NAME}.')
+
+        def decorator(cls):
+            for space, ref in zip(spaces, refs):
+                space = Spaces.NAME(space)
+                Spaces._registry[space][ref] = cls
+                logger.info(
+                    f'register {cls} in {space} Space with reference {ref}'
+                )
+
+            return cls
+
+        return decorator

@@ -44,7 +44,7 @@ class ModelOption(OptionBase):
         from ..spaces import Spaces
         from ...utils.io import load_pth
 
-        model = Spaces.build(Spaces.NAME.MODEL, self.ref, **self.kwargs)
+        model = Spaces.build(Spaces.NAME.MODEL, self.ref, self.kwargs)
         # model = Spaces.build_model(self.name, **self.kwargs)
         logger.info(f'Build {type(model).__name__}')
 

@@ -139,7 +139,7 @@ class TaskOption(OptionBase):
         :return: an instance of option_cls
         """
         if isinstance(option_dict, dict):
-            return option_cls.load_from_dict(option_dict)
+            return option_cls.from_dict(option_dict)
         else:
             return option_dict
 

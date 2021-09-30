@@ -22,7 +22,7 @@ from .utils.log import get_logger
 from .utils.log import pbar
 from .utils.meter import Meter
 
-__all__ = ['Task']
+__all__ = ['Task', 'Batch']
 
 logger = get_logger(__name__)
 
@@ -47,12 +47,12 @@ class Task(LauncherTask, ABC):
         ALL = 'all'
 
     def __init__(self, task_option):
-        logger.info(f'Task: {self.option.name}')
-        logger.info(f'Datetime: {self.option.datetime}')
-
         self.init_random_seed()
 
         self._option = task_option
+
+        logger.info(f'Task: {self.option.name}')
+        logger.info(f'Datetime: {self.option.datetime}')
 
         # gpu setting
         # gpu_ids = self._option.cuda_ids
@@ -144,9 +144,10 @@ class Task(LauncherTask, ABC):
         # tracking
         self.epoch = self.option.train_setting.start_epoch
         self.current_train_routine = None
-        self.cur_stage = self.STAGE.TEST
         if self._option.train:
             self.cur_stage = self.STAGE.TRAIN
+        else:
+            self.cur_stage = self.STAGE.TEST
         self.batch_cnt = {
             self.STAGE.TRAIN: 0,
             self.STAGE.VALID: 0,
@@ -630,7 +631,7 @@ class Task(LauncherTask, ABC):
     ) -> Batch:
         """ This method should define how to perform model forward and
         backward propagation, and update `batch_pack.pred`, `batch_pack.loss`,
-        `batch_pack.batch_size`. To make the loss synchronized across gpus,
+        `batch.size`. To make the loss synchronized across gpus,
         call `self.sync_value`.
 
         :param batch: BatchPack that stores ground truth, prediction, loss
@@ -815,35 +816,37 @@ class Task(LauncherTask, ABC):
         """
         pass
 
-    def update_logging_in_stage(self, result: Batch):
+    def collect_model_output(self, batch):
+        model_output = batch.pred
+        if isinstance(model_output, dict):
+            for key, data in model_output.items():
+                if data is not None:
+                    self.model_output_dict[key].append(data.cpu().numpy())
+        elif isinstance(model_output, torch.Tensor):
+            self.model_output_dict['output'].append(
+                model_output.cpu().numpy()
+            )
+        else:
+            self.model_output_dict['output'].append(model_output)
+
+    def update_logging_in_stage(self, batch: Batch):
         """ log the result during training/validation/testing, including
         recording the loss with `self.meter`, and call the rank0 process to do
         visualization.
 
-        :param result: BatchPack instance
+        :param batch: BatchPack instance
         """
-        if self.keep_model_output:
-            model_output = result.pred
-            if isinstance(model_output, dict):
-                for key, data in model_output.items():
-                    if data is not None:
-                        self.model_output_dict[key].append(data.cpu().numpy())
-            elif isinstance(model_output, torch.Tensor):
-                self.model_output_dict['output'].append(
-                    model_output.cpu().numpy()
-                )
-            else:
-                logger.warn(
-                    f'unable to save model output of type {type(model_output)}'
-                )
 
-        if isinstance(result.loss, dict):
-            for k, v in result.loss.items():
+        if self.keep_model_output:
+            self.collect_model_output(batch)
+
+        if isinstance(batch.loss, dict):
+            for k, v in batch.loss.items():
                 if v is not None:
                     key = f'{self.cur_stage}/{k}-loss'
                     self.meter.record(
                         tag=key, value=v.item(),
-                        weight=result.size,
+                        weight=batch.size,
                         record_op=Meter.RecordOp.APPEND,
                         reduce_op=Meter.ReduceOp.SUM
                     )
@@ -851,27 +854,27 @@ class Task(LauncherTask, ABC):
         else:
             key = f'{self.cur_stage}/loss'
             self.meter.record(
-                tag=key, value=result.loss.item(),
-                weight=result.size,
+                tag=key, value=batch.loss.item(),
+                weight=batch.size,
                 record_op=Meter.RecordOp.APPEND,
                 reduce_op=Meter.ReduceOp.SUM
             )
             self.in_stage_meter_keys.add(key)
         if self.is_rank0:
-            self.rank0_update_logging_in_stage(result)
+            self.rank0_update_logging_in_stage(batch)
 
-    def rank0_update_logging_in_stage(self, result: Batch):
+    def rank0_update_logging_in_stage(self, batch: Batch):
         """ this method should update logging only needed on the rank0 process,
         such as tensorboard logging, during a stage.
 
-        :param result: BatchPack that stores ground truth, prediction, loss
+        :param batch: BatchPack that stores ground truth, prediction, loss
             and batch size
         """
         self.progress_bars[self.cur_stage].update()
         self.progress_bars[self.cur_stage].refresh()
         if self.tboard is not None:
-            if isinstance(result.loss, dict):
-                for k, v in result.loss.items():
+            if isinstance(batch.loss, dict):
+                for k, v in batch.loss.items():
                     self.tboard.add_scalar(
                         f'batch-{self.cur_stage}/{k}-loss', v,
                         self.batch_cnt[self.cur_stage]
@@ -881,11 +884,11 @@ class Task(LauncherTask, ABC):
                     )
             else:
                 self.tboard.add_scalar(
-                    f'batch-{self.cur_stage}/loss', result.loss.item(),
+                    f'batch-{self.cur_stage}/loss', batch.loss.item(),
                     self.batch_cnt[self.cur_stage]
                 )
                 self.tboard.add_scalar(
-                    f'batch/loss', result.loss.item(),
+                    f'batch/loss', batch.loss.item(),
                     self.batch_cnt[self.STAGE.ALL]
                 )
             self.batch_cnt[self.cur_stage] += 1

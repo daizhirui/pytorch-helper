@@ -15,4 +15,4 @@ class DataloaderOption(OptionBase):
         """
         from ..spaces import Spaces
 
-        return Spaces.build(Spaces.NAME.DATALOADER, self.ref, **self.kwargs)
+        return Spaces.build(Spaces.NAME.DATALOADER, self.ref, self.kwargs)
