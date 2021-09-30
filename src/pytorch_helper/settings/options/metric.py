@@ -15,4 +15,3 @@ class MetricOption(OptionBase):
         """
         from ..spaces import Spaces
         return Spaces.build(Spaces.NAME.METRIC, self.ref, self.kwargs)
-        # return Spaces.build_metric(self.name, **self.kwargs)

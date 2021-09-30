@@ -5,7 +5,8 @@ from typing import TypeVar
 
 import ruamel.yaml as yaml
 
-from ...utils.io import save_yaml, load_yaml
+from ...utils.io import load_yaml
+from ...utils.io import save_yaml
 from ...utils.log import get_logger
 
 T = TypeVar('T')
@@ -42,8 +43,6 @@ class _Base:
         """
         if option_file is None:
             return None
-        # with open(option_file, 'r') as file:
-        #     option_dict: dict = yaml.safe_load(file)
         option_dict = load_yaml(option_file)
         option_dict.update(kwargs)
         logger.info(f'create {cls.__name__} from file {option_file}')

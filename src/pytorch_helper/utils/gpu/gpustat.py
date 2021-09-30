@@ -5,11 +5,6 @@
 The original version of this file is from https://github.com/wookayin/gpustat
 Thanks to the author of gpustat, Jongwook Choi
 """
-# from __future__ import absolute_import
-# from __future__ import division
-# from __future__ import print_function
-# from __future__ import unicode_literals
-
 import json
 import locale
 import os.path
@@ -22,6 +17,7 @@ import psutil
 from blessed import Terminal
 from six.moves import cStringIO as StringIO
 
+from .pynvml import NVMLError
 from .pynvml import NVML_TEMPERATURE_GPU
 from .pynvml import nvmlDeviceGetComputeRunningProcesses
 from .pynvml import nvmlDeviceGetCount
@@ -36,9 +32,8 @@ from .pynvml import nvmlDeviceGetMemoryInfo
 from .pynvml import nvmlDeviceGetName
 from .pynvml import nvmlDeviceGetPowerUsage
 from .pynvml import nvmlDeviceGetTemperature
-from .pynvml import nvmlDeviceGetUtilizationRates
 from .pynvml import nvmlDeviceGetUUID
-from .pynvml import NVMLError
+from .pynvml import nvmlDeviceGetUtilizationRates
 from .pynvml import nvmlInit
 from .pynvml import nvmlShutdown
 from .pynvml import nvmlSystemGetCudaDriverVersion

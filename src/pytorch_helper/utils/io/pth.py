@@ -2,9 +2,10 @@ import time
 
 import torch
 
+from . import config
 from .make_dirs import make_dirs_for_file
 from ..log import get_logger
-from . import config
+
 __all__ = [
     'load_pth',
     'save_pth'

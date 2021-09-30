@@ -1,6 +1,6 @@
 import os
-from dataclasses import dataclass
 from dataclasses import InitVar
+from dataclasses import dataclass
 from typing import Any
 from typing import Type
 from typing import TypeVar

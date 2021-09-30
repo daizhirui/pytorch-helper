@@ -2,7 +2,6 @@ import os
 from dataclasses import dataclass
 
 from .base import OptionBase
-
 from ...utils.log import get_logger
 
 __all__ = ['ModelOption']
@@ -35,7 +34,7 @@ class ModelOption(OptionBase):
                 )
         return False
 
-    def build(self):  # -> Tuple[Module, Optional[dict]]:
+    def build(self):
         """ build the model and load the weights from the checkpoint if
         `self.pth_available` is True.
 

@@ -4,13 +4,12 @@ from typing import Union
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.backends.backend_agg import FigureCanvasAgg
 from PIL import Image
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 from . import config
 from .make_dirs import make_dirs_for_file
 from ..log import get_logger
-
 
 __all__ = [
     'imread',

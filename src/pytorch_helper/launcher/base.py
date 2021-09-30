@@ -66,11 +66,6 @@ def run_task(
     register_func()
     from pytorch_helper.settings.spaces import Spaces
 
-    # if task_option.train:
-    #     space = Spaces.NAME.TASK
-    # else:
-    #     space = Spaces.NAME.TASK_FOR_TEST
-
     space = Spaces.NAME.TASK
 
     task_option.cuda_ids = cuda_ids
@@ -137,7 +132,6 @@ class Launcher:
         self.task_option = Spaces.build(
             Spaces.NAME.TASK_OPTION, task_dict['ref'], task_dict
         )
-        # self.task_option = Spaces.build_task_option(task_dict)
         print(self.task_option)
 
     def modify_task_dict(self, task_dict: dict) -> dict:
