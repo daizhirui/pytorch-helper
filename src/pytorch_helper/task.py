@@ -843,7 +843,7 @@ class Task(LauncherTask, ABC):
         if isinstance(batch.loss, dict):
             for k, v in batch.loss.items():
                 if v is not None:
-                    key = f'{self.cur_stage}/{k}-loss'
+                    key = f'{self.cur_stage.value}/{k}-loss'
                     self.meter.record(
                         tag=key, value=v.item(),
                         weight=batch.size,
@@ -852,7 +852,7 @@ class Task(LauncherTask, ABC):
                     )
                     self.in_stage_meter_keys.add(key)
         else:
-            key = f'{self.cur_stage}/loss'
+            key = f'{self.cur_stage.value}/loss'
             self.meter.record(
                 tag=key, value=batch.loss.item(),
                 weight=batch.size,
@@ -876,7 +876,7 @@ class Task(LauncherTask, ABC):
             if isinstance(batch.loss, dict):
                 for k, v in batch.loss.items():
                     self.tboard.add_scalar(
-                        f'batch-{self.cur_stage}/{k}-loss', v,
+                        f'batch-{self.cur_stage.value}/{k}-loss', v,
                         self.batch_cnt[self.cur_stage]
                     )
                     self.tboard.add_scalar(
@@ -884,7 +884,7 @@ class Task(LauncherTask, ABC):
                     )
             else:
                 self.tboard.add_scalar(
-                    f'batch-{self.cur_stage}/loss', batch.loss.item(),
+                    f'batch-{self.cur_stage.value}/loss', batch.loss.item(),
                     self.batch_cnt[self.cur_stage]
                 )
                 self.tboard.add_scalar(
@@ -903,7 +903,7 @@ class Task(LauncherTask, ABC):
         summary = OrderedDict()
 
         for key in sorted(list(self.in_stage_meter_keys)):
-            if key.startswith(self.cur_stage):
+            if key.startswith(self.cur_stage.value):
                 summary[key] = self.meter.mean(key)
 
         for k, v in summary.items():
@@ -913,9 +913,13 @@ class Task(LauncherTask, ABC):
                 record_op=Meter.RecordOp.APPEND,
                 reduce_op=Meter.ReduceOp.STORE
             )
-            logger.info(f'{tag} = {v}')
+            if self.is_rank0:
+                logger.info(f'{tag} = {v}')
 
         if self.is_rank0:
+            if self.tboard is not None:
+                for k, v in summary.items():
+                    self.tboard.add_scalar(f'epoch-{k}', v, self.epoch)
             self.rank0_update_logging_after_stage(summary)
 
         return summary
@@ -927,9 +931,7 @@ class Task(LauncherTask, ABC):
         :param summary: dict of stage summary
         :return:
         """
-        if self.tboard is not None:
-            for k, v in summary.items():
-                self.tboard.add_scalar(f'epoch-{k}', v, self.epoch)
+        pass
 
     def rank0_update_logging_after_epoch(self):
         """ this method should update logging only needed on the rank0 process.

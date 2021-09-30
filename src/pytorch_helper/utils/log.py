@@ -76,9 +76,14 @@ class ExitHandler(colorlog.StreamHandler):
 
 
 exit_on_error = False
+loggers = {}
 
 
 def get_logger(name: str):
+    global loggers
+    if name in loggers:
+        return loggers[name]
+
     fmt = f'%(log_color)s[{_get_device()}][%(process)d][%(asctime)s]' \
           f'[%(levelname)s: %(name)s: %(lineno)4d]: %(message)s'
     handler = colorlog.StreamHandler(stream=TqdmStream)
@@ -91,6 +96,8 @@ def get_logger(name: str):
         handler = ExitHandler(stream=TqdmStream)
         handler.setFormatter(colorlog.ColoredFormatter(fmt))
         logger.addHandler(handler)
+    logger.propagate = False
+    loggers[name] = logger
     return logger
 
 
