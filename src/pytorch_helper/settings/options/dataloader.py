@@ -10,6 +10,10 @@ class DataloaderOption(OptionBase):
     ref: str
     kwargs: dict
 
+    def __post_init__(self):
+        if self.kwargs is None:
+            self.kwargs = dict()
+
     def build(self):
         """ build a dataloader
         """

@@ -11,6 +11,10 @@ class LRSchedulerOption(OptionBase):
     ref: str
     kwargs: dict
 
+    def __post_init__(self):
+        if self.kwargs is None:
+            self.kwargs = dict()
+
     def build(self, optimizer):
         """ build a learning rate scheduler with the given optimizer
 

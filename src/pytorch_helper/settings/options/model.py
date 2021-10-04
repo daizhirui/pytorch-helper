@@ -15,6 +15,10 @@ class ModelOption(OptionBase):
     kwargs: dict
     pth_path: str
 
+    def __post_init__(self):
+        if self.kwargs is None:
+            self.kwargs = dict()
+
     @property
     def pth_available(self):
         """ check if `self.pth_path` is available

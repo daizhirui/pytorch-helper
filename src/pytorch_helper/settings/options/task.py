@@ -1,6 +1,6 @@
 import os
-from dataclasses import InitVar
 from dataclasses import dataclass
+from dataclasses import InitVar
 from typing import Any
 from typing import Type
 from typing import TypeVar
@@ -8,6 +8,7 @@ from typing import Union
 
 from .base import OptionBase
 from .dataloader import DataloaderOption
+from .descriptors import AutoConvertDescriptor
 from .loss import LossOption
 from .lr_scheduler import LRSchedulerOption
 from .model import ModelOption
@@ -28,7 +29,7 @@ logger = get_logger(__name__)
 
 
 @dataclass()
-class TaskOption(OptionBase):
+class TaskOptionData(OptionBase):
     name: str
     ref: str
     datetime: str
@@ -72,11 +73,6 @@ class TaskOption(OptionBase):
                 'Setup dataset path and output path from option file'
             )
 
-            if self.profiling:
-                self.output_path = os.path.join(
-                    self.output_path, f'profiling-{self.profile_tool}'
-                )
-
             if not os.path.exists(self.dataset_path):
                 raise FileNotFoundError(
                     f'dataset path: {self.dataset_path} does not exist'
@@ -90,20 +86,15 @@ class TaskOption(OptionBase):
             else:
                 make_dirs(self.output_path)
 
+        if self.profiling:
+            self.output_path = os.path.join(
+                self.output_path, f'profiling-{self.profile_tool}'
+            )
+
         if isinstance(self.dataloader, dict):
             self.dataloader['kwargs']['root'] = self.dataset_path
             self.dataloader['kwargs']['use_ddp'] = is_distributed
             self.dataloader = DataloaderOption.from_dict(self.dataloader)
-
-        self.loss = self.load_option(self.loss, LossOption)
-        self.optimizer = self.load_option(self.optimizer, OptimizerOption)
-        self.lr_scheduler = self.load_option(
-            self.lr_scheduler, LRSchedulerOption
-        )
-        self.model = self.load_option(self.model, ModelOption)
-        self.train_setting = self.load_option(
-            self.train_setting, TrainSettingOption
-        )
 
         if self.datetime is None:
             self.datetime = get_datetime()
@@ -130,19 +121,6 @@ class TaskOption(OptionBase):
                     f' source code folder for automatic backup.'
                 )
 
-    @staticmethod
-    def load_option(option_dict: dict, option_cls: Type[T]) -> T:
-        """ convert option_dict to option_cls if option_dict is a dict
-
-        :param option_dict: dict to convert
-        :param option_cls: class of option to convert to
-        :return: an instance of option_cls
-        """
-        if isinstance(option_dict, dict):
-            return option_cls.from_dict(option_dict)
-        else:
-            return option_dict
-
     @property
     def output_path_task(self):
         return os.path.join(self.output_path, self.name, self.datetime)
@@ -164,3 +142,24 @@ class TaskOption(OptionBase):
     @property
     def output_path_test(self):
         return os.path.join(self.output_path_task, 'test')
+
+
+class TaskOption(TaskOptionData):
+    loss = AutoConvertDescriptor(LossOption.from_dict)
+    optimizer = AutoConvertDescriptor(OptimizerOption.from_dict)
+    lr_scheduler = AutoConvertDescriptor(LRSchedulerOption.from_dict)
+    model = AutoConvertDescriptor(ModelOption.from_dict)
+    train_setting = AutoConvertDescriptor(TrainSettingOption.from_dict)
+
+    @staticmethod
+    def load_option(option_dict: dict, option_cls: Type[T]) -> T:
+        """ convert option_dict to option_cls if option_dict is a dict
+
+        :param option_dict: dict to convert
+        :param option_cls: class of option to convert to
+        :return: an instance of option_cls
+        """
+        if isinstance(option_dict, dict):
+            return option_cls.from_dict(option_dict)
+        else:
+            return option_dict
