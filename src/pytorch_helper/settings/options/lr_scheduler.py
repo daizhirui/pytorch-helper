@@ -10,6 +10,7 @@ class LRSchedulerOption(OptionBase):
     enable: bool
     ref: str
     kwargs: dict
+    metric_key: str = 'loss'
 
     def __post_init__(self):
         if self.kwargs is None:

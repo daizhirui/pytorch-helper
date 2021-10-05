@@ -531,7 +531,12 @@ class Task(LauncherTask, ABC):
                 synchronize()
 
         if self.lr_scheduler is not None:
-            self.lr_scheduler.step()
+            if isinstance(self.lr_scheduler,
+                          torch.optim.lr_scheduler.ReduceLROnPlateau):
+                key = f'valid/{self._option.lr_scheduler.metric_key}'
+                self.lr_scheduler.step(valid_summary[key])
+            else:
+                self.lr_scheduler.step()
         if self.is_rank0:
             # save models
             self.save_best_model(valid_summary)
