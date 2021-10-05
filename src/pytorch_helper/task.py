@@ -2,8 +2,8 @@ import os
 import random
 import time
 from abc import ABC
-from collections import OrderedDict
 from collections import defaultdict
+from collections import OrderedDict
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
@@ -209,23 +209,30 @@ class Task(LauncherTask, ABC):
         if self._option.train and not self._option.resume:
             return
 
-        if 'epoch' in state_dict:
-            self.epoch = state_dict['epoch'] + 1
-            logger.info(f"Resume from epoch {state_dict['epoch']}")
+        key = self.StateKey.EPOCH.value
+        if key in state_dict:
+            self.epoch = state_dict[key] + 1
+            logger.info(f"Resume from epoch {state_dict[key]}")
 
         if self._option.train:
-            self.load_state(self.optimizer, state_dict, 'optimizer')
-            self.load_state(self.lr_scheduler, state_dict, 'lr_scheduler')
-            if 'rng' in state_dict:
-                self.set_rng_state(state_dict['rng'])
+            key = self.StateKey.OPTIMIZER.value
+            self.load_state(self.optimizer, state_dict, key)
+            key = self.StateKey.LR_SCHEDULER.value
+            self.load_state(self.lr_scheduler, state_dict, key)
+            key = self.StateKey.RNG_STATE.value
+            if key in state_dict:
+                self.set_rng_state(state_dict[key])
             else:
                 logger.warn(f'No random state to resume!')
 
             # miscellaneous
-            self.loss_min = state_dict.get('loss_min', self.loss_min)
-            self.batch_cnt = state_dict.get('batch_cnt', self.batch_cnt)
+            key = self.StateKey.LOSS_MIN.value
+            self.loss_min = state_dict.get(key, self.loss_min)
+            key = self.StateKey.BATCH_CNT.value
+            self.batch_cnt = state_dict.get(key, self.batch_cnt)
+            key = self.StateKey.IN_STAGE_METER_KEYS.value
             self.in_stage_meter_keys = state_dict.get(
-                'in_stage_meter_keys', self.in_stage_meter_keys
+                key, self.in_stage_meter_keys
             )
             if self.is_rank0:
                 self.progress_bars[self.STAGE.ALL].update(self.epoch)
@@ -282,28 +289,44 @@ class Task(LauncherTask, ABC):
     # TASK STATE #
     ##############
 
+    class StateKey(Enum):
+        OPTION = 'option'
+        MODEL = 'model'
+        LOSS_FN = 'loss_fn'
+        EPOCH = 'epoch'
+        RNG_STATE = 'rng_state'
+        LR = 'lr'
+        OPTIMIZER = 'optimizer'
+        LR_SCHEDULER = 'lr_scheduler'
+        LOSS_MIN = 'loss_min'
+        IN_STAGE_METER_KEYS = 'in_stage_meter_keys'
+        BATCH_CNT = 'batch_cnt'
+
     def state_dict(self, resumable):
 
         def get_state(obj):
             if obj and hasattr(obj, 'state_dict'):
                 return obj.state_dict()
 
-        state_dict = dict(
-            option=self.option.as_dict(),
-            model=get_state(self.unwrapped_model),
-            loss_fn=get_state(self.loss_fn),
-            epoch=self.epoch,
-            rng_state=self.get_rng_state()
-        )
-        if resumable:
-            state_dict.update(dict(
-                lr=self.optimizer.param_groups[0]['lr'],
-                optimizer=get_state(self.optimizer),
-                lr_scheduler=get_state(self.lr_scheduler),
-                loss_min=self.loss_min,
-                in_stage_meter_keys=self.in_stage_meter_keys,
-                batch_cnt=self.batch_cnt
-            ))
+        state_dict = {
+            self.StateKey.OPTION.value: self.option.as_dict(),
+            self.StateKey.MODEL.value: get_state(self.unwrapped_model),
+            self.StateKey.LOSS_FN.value: get_state(self.loss_fn),
+            self.StateKey.EPOCH.value: self.epoch,
+            self.StateKey.RNG_STATE.value: self.get_rng_state()
+        }
+
+        if not resumable:
+            return state_dict
+
+        state_dict.update({
+            self.StateKey.LR.value: self.learning_rate,
+            self.StateKey.OPTIMIZER.value: get_state(self.optimizer),
+            self.StateKey.LR_SCHEDULER.value: get_state(self.lr_scheduler),
+            self.StateKey.LOSS_MIN.value: self.loss_min,
+            self.StateKey.IN_STAGE_METER_KEYS.value: self.in_stage_meter_keys,
+            self.StateKey.BATCH_CNT.value: self.batch_cnt
+        })
         return state_dict
 
     @staticmethod
