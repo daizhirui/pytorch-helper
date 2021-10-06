@@ -63,7 +63,7 @@ def reduce_value(
     input_value: Union[torch.Tensor, Dict[Hashable, torch.Tensor]],
     rank0_only: bool = False, average: bool = True,
     op=ReduceOp.SUM
-) -> Union[torch.Tensor, Dict[Hashable, torch.Tensor]]:
+):
     """ Reduce the values in ``input_dict`` with operation ``op``.
 
     :param input_value: value or dict of values to reduce
@@ -72,6 +72,8 @@ def reduce_value(
     :param op: reduce operation, default is ``ReduceOp.SUM``
     :return: reduced value or dict of reduced values
     """
+    if input_value is None:
+        return input_value
     world_size = get_world_size()
     if world_size < 2:
         return input_value
@@ -79,24 +81,14 @@ def reduce_value(
     with torch.no_grad():
         if isinstance(input_value, dict):
             output = dict()
-            for k in sorted(input_value.keys()):
-                value = input_value[k]
-                if value is None:
-                    output[k] = None
-                    continue
-                if isinstance(value, dict):
-                    reduce_value(value, rank0_only, average, op)
-                else:
-                    reduce_func(value.data, op=op)
-                    if average:
-                        if rank0_only:
-                            if is_rank0():
-                                value /= world_size
-                        else:
-                            value /= world_size
-                output[k] = value
+            for k, v in input_value.items():
+                output[k] = reduce_value(v, rank0_only, average, op)
+        elif isinstance(input_value, (list, tuple)):
+            output = [reduce_value(x, rank0_only, average, op)
+                      for x in input_value]
         else:
-            output = reduce_func(input_value, op=op)
+            output = input_value
+            reduce_func(input_value, op=op)
             if average:
                 if rank0_only:
                     if is_rank0():

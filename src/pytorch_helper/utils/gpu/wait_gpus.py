@@ -61,9 +61,18 @@ def wait_gpus(gpus: dict, collect=True, pre_release=True, sync=True):
                 continue
             q = queries[gpu_id]
             if q.processes is not None and len(q.processes) > 0:
-                logger.info(f'GPU {gpu_id} is used, check again in 5 seconds')
-                gpus_not_ready = True
-                break
+                processes = [
+                    p for p in q.processes
+                    if p['gpu_memory_usage'] is not None
+                ]
+                processes = [
+                    p for p in processes
+                    if p['gpu_memory_usage'] > 0
+                ]
+                if len(processes) > 0:
+                    logger.info(f'GPU {gpu_id} is used, check again in 5 seconds')
+                    gpus_not_ready = True
+                    break
             else:
                 if q.processes is None:
                     logger.warn(f'GPU {gpu_id} processes is None')
