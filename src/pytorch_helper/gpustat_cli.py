@@ -80,7 +80,8 @@ def main(*argv):
                               help='Suppress colored output')
     parser.add_argument('-a', '--show-all', action='store_true',
                         help='Display all gpu properties above')
-
+    parser.add_argument('-l', '--as-list', action='store_true',
+                        help='Show processes as list.')
     parser.add_argument('-c', '--show-cmd', action='store_true',
                         help='Display cmd name of running process')
     parser.add_argument(
@@ -125,6 +126,7 @@ def main(*argv):
                         version=('gpustat %s' % __version__))
     args = parser.parse_args(argv[1:])
     if args.show_all:
+        args.as_list = True
         args.show_cmd = True
         args.show_user = True
         args.show_pid = True
@@ -132,6 +134,9 @@ def main(*argv):
         args.show_codec = 'enc,dec'
         args.show_power = 'draw,limit'
     del args.show_all
+
+    if args.show_full_cmd:
+        args.as_list = True
 
     if args.interval is None:  # with default value
         args.interval = 1.0

@@ -195,6 +195,7 @@ class GPUStat(object):
     def print_to(
         self, fp,
         with_colors=True,  # deprecated arg
+        as_list=False,
         show_cmd=False,
         show_full_cmd=False,
         show_user=False,
@@ -319,35 +320,45 @@ class GPUStat(object):
             )
             return r
 
-        def full_process_info(_p):
+        def list_process_info(_p):
             r = "{C0} ├─ {:>6} ".format(
                 _repr(_p['pid'], '--'), **colors
             )
-            r += "{C0}({CCPUUtil}{:4.0f}%{C0}, {CCPUMemU}{:>6}{C0})".format(
+            r += "{C0}({CCPUUtil}{:4.0f}%{C0}, {CCPUMemU}{:>6}{C0}".format(
                 _repr(_p['cpu_percent'], '--'),
                 bytes2human(_repr(_p['cpu_memory_usage'], 0)), **colors
             )
-            full_command_pretty = prettify_commandline(
-                _p['full_command'], colors['C1'], colors['CCmd'])
+            r += ', {CMemP}{}MB{C0}, {})'.format(
+                _repr(_p['gpu_memory_usage'], '?'), '+'.join(_p['mode']),
+                **colors
+            )
+            if show_full_cmd:
+                command_pretty = prettify_commandline(
+                    _p['full_command'], colors['C1'], colors['CCmd'])
+            else:
+                command_pretty = prettify_commandline(
+                    _p['command'], colors['C1'], colors['CCmd']
+                )
             r += "{C0}: {CCmd}{}{C0}".format(
-                _repr(full_command_pretty, '?'),
+                _repr(command_pretty, '?'),
                 **colors
             )
             return r
 
         processes = self.entry['processes']
-        full_processes = []
+        list_processes = []
         if processes is None:
             # None (not available)
             reps += ' ({})'.format(NOT_SUPPORTED)
         else:
             for p in processes:
-                reps += ' ' + process_repr(p)
-                if show_full_cmd:
-                    full_processes.append(os.linesep + full_process_info(p))
-        if show_full_cmd and full_processes:
-            full_processes[-1] = full_processes[-1].replace('├', '└', 1)
-            reps += ''.join(full_processes)
+                if show_full_cmd or as_list:
+                    list_processes.append(os.linesep + list_process_info(p))
+                else:
+                    reps += ' ' + process_repr(p)
+        if (show_full_cmd or as_list) and list_processes:
+            list_processes[-1] = list_processes[-1].replace('├', '└', 1)
+            reps += ''.join(list_processes)
         fp.write(reps)
         return fp
 
@@ -492,37 +503,43 @@ class GPUStatCollection(object):
             if nv_comp_processes is None and nv_graphics_processes is None:
                 processes = None
             else:
-                processes = []
+                processes = dict()
+
                 nv_comp_processes = nv_comp_processes or []
                 nv_graphics_processes = nv_graphics_processes or []
                 # A single process might run in both of graphics and compute
                 # mode, However we will display the process only once
-                seen_pids = set()
-                for nv_process in nv_comp_processes + nv_graphics_processes:
-                    if nv_process.pid in seen_pids:
-                        continue
-                    seen_pids.add(nv_process.pid)
-                    try:
-                        process = get_process_info(nv_process)
-                        processes.append(process)
-                    except psutil.NoSuchProcess:
-                        # TODO: add some reminder for NVML broken context
-                        # e.g. nvidia-smi reset  or  reboot the system
-                        pass
-                    except psutil.AccessDenied:
-                        pass
-                    except FileNotFoundError:
-                        # Ignore the exception which probably has occurred
-                        # from psutil, due to a non-existent PID (see #95).
-                        # The exception should have been translated, but
-                        # there appears to be a bug of psutil. It is unlikely
-                        # FileNotFoundError is thrown in different situations.
-                        pass
+                # seen_pids = set()
+                for mode, nv_processes in zip(
+                    ['C', 'G'], [nv_comp_processes, nv_graphics_processes]
+                ):
+                    for nv_process in nv_processes:
+                        if nv_process.pid in processes:
+                            processes[nv_process.pid]['mode'].append(mode)
+                            continue
+                        # seen_pids.add(nv_process.pid)
+                        try:
+                            process = get_process_info(nv_process)
+                            process['mode'] = [mode]
+                            processes[nv_process.pid] = process
+                        except psutil.NoSuchProcess:
+                            # TODO: add some reminder for NVML broken context
+                            # e.g. nvidia-smi reset  or  reboot the system
+                            pass
+                        except psutil.AccessDenied:
+                            pass
+                        except FileNotFoundError:
+                            # Ignore the exception which probably has occurred
+                            # from psutil, due to a non-existent PID (see #95).
+                            # The exception should have been translated, but
+                            # there appears to be a bug of psutil. It is
+                            # unlikely FileNotFoundError is thrown in
+                            # different situations.
+                            pass
 
                 # TODO: Do not block if full process info is not requested
                 time.sleep(0.1)
-                for process in processes:
-                    pid = process['pid']
+                for pid, process in processes.items():
                     cache_process = GPUStatCollection.global_processes[pid]
                     process['cpu_percent'] = cache_process.cpu_percent()
 
@@ -545,7 +562,7 @@ class GPUStatCollection(object):
                 # Convert bytes into MBytes
                 'memory.used': memory.used // MB if memory else None,
                 'memory.total': memory.total // MB if memory else None,
-                'processes': processes,
+                'processes': list(processes.values()),
             }
             GPUStatCollection.clean_processes()
             return _gpu_info
@@ -597,7 +614,7 @@ class GPUStatCollection(object):
     # --- Printing Functions ---
 
     def print_formatted(
-        self, fp=sys.stdout, force_color=False, no_color=False,
+        self, fp=sys.stdout, force_color=False, no_color=False, as_list=True,
         show_cmd=False, show_full_cmd=False, show_user=False,
         show_pid=False, show_fan_speed=None,
         show_codec="", show_power=None,
@@ -653,6 +670,7 @@ class GPUStatCollection(object):
         # body
         for g in self:
             g.print_to(fp,
+                       as_list=as_list,
                        show_cmd=show_cmd,
                        show_full_cmd=show_full_cmd,
                        show_user=show_user,

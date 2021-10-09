@@ -1,6 +1,7 @@
 import os
 from dataclasses import dataclass
 from dataclasses import InitVar
+from enum import Enum
 from typing import Any
 from typing import Type
 from typing import TypeVar
@@ -22,10 +23,17 @@ from ...utils.log import get_logger
 T = TypeVar('T')
 
 __all__ = [
+    'TaskMode',
     'TaskOption'
 ]
 
 logger = get_logger(__name__)
+
+
+class TaskMode(Enum):
+    TRAIN = 'train'  # train model
+    TEST = 'test'  # test model on test set
+    EVAL = 'eval'  # evaluate model, completely user defined
 
 
 @dataclass()
@@ -44,7 +52,7 @@ class TaskOptionData(OptionBase):
     lr_scheduler: Union[dict, LRSchedulerOption]
     src_folder: str
     resume: bool
-    for_train: InitVar[bool]
+    mode: InitVar[TaskMode]
     is_distributed: InitVar[bool]
     test_option: Any = None
     print_freq: int = 10
@@ -52,9 +60,9 @@ class TaskOptionData(OptionBase):
     profile_tool: str = 'cprofile'
     profile_memory: bool = False
 
-    def __post_init__(self, for_train: bool, is_distributed: bool):
+    def __post_init__(self, mode: TaskMode, is_distributed: bool):
         self.cuda_ids = None
-        self.train = for_train
+        self.task_mode = TaskMode(mode)
         self.distributed = is_distributed
 
         if 'DATASET_PATH' in os.environ and 'OUTPUT_PATH' in os.environ:
@@ -101,7 +109,7 @@ class TaskOptionData(OptionBase):
             while os.path.exists(self.output_path_tb):
                 self.datetime = get_datetime()
 
-        if for_train:
+        if self.train:
             logger.info(f'create {self.output_path_tb}')
             make_dirs(self.output_path_tb)
             logger.info(f'create {self.output_path_pth}')
@@ -120,6 +128,10 @@ class TaskOptionData(OptionBase):
                     f'src_folder is None. Strongly recommend you to specify the'
                     f' source code folder for automatic backup.'
                 )
+
+    @property
+    def train(self):
+        return self.task_mode == TaskMode.TRAIN
 
     @property
     def output_path_task(self):

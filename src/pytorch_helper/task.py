@@ -1,6 +1,5 @@
 import os
 import random
-import time
 from abc import ABC
 from collections import defaultdict
 from collections import OrderedDict
@@ -13,7 +12,7 @@ import torch
 import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
 
-from .launcher.base import LauncherTask
+from .launcher.launcher import LauncherTask
 from .settings.options import TrainRoutine
 from .utils.dist import synchronize
 from .utils.io import save_dict_as_csv
@@ -23,6 +22,8 @@ from .utils.log import pbar
 from .utils.meter import Meter
 
 __all__ = ['Task', 'Batch']
+
+from .utils.timer import TimerManager
 
 logger = get_logger(__name__)
 
@@ -50,21 +51,10 @@ class Task(LauncherTask, ABC):
         self.init_random_seed()
 
         self._option = task_option
+        self.timer_manager = TimerManager()
 
         logger.info(f'Task: {self.option.name}')
         logger.info(f'Datetime: {self.option.datetime}')
-
-        # gpu setting
-        # gpu_ids = self._option.cuda_ids
-        # self.is_distributed = is_distributed()
-        # check data parallel: if distributed data parallel is enabled, should
-        # check visible gpu devices via torch.cuda.device_count(), otherwise,
-        # check length of gpu_ids, will use data parallel instead.
-        # if self._option.distributed:
-        #     n_gpus = torch.cuda.device_count()
-        # else:
-        #     n_gpus = len(gpu_ids)
-        # self.is_parallel = n_gpus > 1 or self.is_distributed
 
         from .utils.dist import get_rank
         self.rank = get_rank()
@@ -92,13 +82,13 @@ class Task(LauncherTask, ABC):
 
         # load model
         logger.info('Loading model ...')
-        t = time.time()
-        self.model, state_dict = self.option.model.build()
-        logger.info(f'Loaded, took {time.time() - t} seconds.')
+        with self.timer_manager.timing() as timer:
+            self.model, state_dict = self.option.model.build()
+        logger.info(f'Loaded, took {timer.elapsed} seconds.')
         logger.info(f'Moving model to CUDA ...')
-        t = time.time()
-        self.model.cuda()
-        logger.info(f'Moved, took {time.time() - t} seconds.')
+        with self.timer_manager.timing() as timer:
+            self.model.cuda()
+        logger.info(f'Moved, took {timer.elapsed} seconds.')
 
         if self._option.distributed:
             logger.info('Use DDP, convert BatchNorm to SyncBatchNorm.')
@@ -362,7 +352,7 @@ class Task(LauncherTask, ABC):
         pth_name = f'{name}.pth' if name else f'epoch_{self.epoch}.pth'
         path = os.path.join(self.option.output_path_pth, pth_name)
         save_pth(path, state_dict)
-        logger.info(f"Saving checkpoint: {path} at epoch {self.epoch}")
+        logger.info(f"Saved checkpoint: {path} at epoch {self.epoch}")
 
     def save_best_model(self, valid_loss):
         """ save the model which has minimum validation loss
@@ -410,10 +400,7 @@ class Task(LauncherTask, ABC):
         """
 
         self.profiling()
-        if self._option.train:
-            self.run_train()
-        else:
-            self.run_test()
+        getattr(self, f'run_{self._option.task_mode.value}')()
 
     def run_train(self):
         for epoch in range(self.epoch, self.option.train_setting.epochs):
@@ -423,7 +410,6 @@ class Task(LauncherTask, ABC):
             # NOTE: different stage should not share the same set of keys
             self.meter.reset_tags(self.in_stage_meter_keys)
             self.one_epoch(epoch)
-            # self.after_epoch(valid_summary)
         # save only the state dicts of model and loss_fn
         self.save_pth('model_final', resumable=False)
 
@@ -455,6 +441,12 @@ class Task(LauncherTask, ABC):
             self.model_output_dict[key] = np.concatenate(value, axis=0)
 
         return summary
+
+    def run_eval(self):
+        logger.warn(f'{type(self).__name__} does not implement run_eval, this '
+                    f'is expected to be implemented by the user. Do not call '
+                    f'this in your implementation of run_eval to avoid this '
+                    f'warning.')
 
     # PROFILING
 
@@ -566,24 +558,6 @@ class Task(LauncherTask, ABC):
             self.backup()
             self.progress_bars[self.STAGE.ALL].update()
             self.rank0_update_logging_after_epoch()
-
-    # def after_epoch(self, valid_summary: dict):
-    #     """ do some setup and logging with the validation summary after one
-    #     epoch, such as learning rate adjustment, save the best model, etc.
-    #
-    #     :param valid_summary:
-    #     :return:
-    #     """
-    #     if self.lr_scheduler is not None:
-    #         self.lr_scheduler.step()
-    #     if self.is_rank0:
-    #         # save models
-    #         self.save_best_model(valid_summary)
-    #         self.backup()
-    #         self.progress_bars[self.STAGE.ALL].update()
-    #         self.rank0_update_logging_after_epoch()
-
-    # LEARNING RATE
 
     @property
     def learning_rate(self):

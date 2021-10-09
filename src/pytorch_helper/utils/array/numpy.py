@@ -6,7 +6,8 @@ from torch import Tensor
 
 __all__ = [
     'to_numpy',
-    'unfold'
+    'unfold',
+    'cdf'
 ]
 
 
@@ -56,3 +57,11 @@ def unfold(a, axis, size, step):
 
     out = np.stack(out, -1)
     return out
+
+
+def cdf(x, bins=50):
+    hist, bin_edges = np.histogram(x, bins=bins, density=True)
+    y = np.empty_like(bin_edges)
+    y[0] = 0
+    y[1:] = np.cumsum(np.diff(bin_edges) * hist)
+    return bin_edges, y

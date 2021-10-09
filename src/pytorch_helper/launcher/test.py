@@ -1,13 +1,13 @@
 import os
 
-from .base import Launcher
+from .launcher import Launcher
 
 __all__ = ['Tester']
 
 
 class Tester(Launcher):
-    def __init__(self, arg_cls, register_func):
-        super(Tester, self).__init__(arg_cls, register_func, for_train=False)
+    def __init__(self, arg_cls, register_func, mode='test'):
+        super(Tester, self).__init__(arg_cls, register_func, mode=mode)
 
     def modify_task_dict(self, task_dict):
         task_dict = super(Tester, self).modify_task_dict(task_dict)

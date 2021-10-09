@@ -2,6 +2,7 @@
 This file contains functions for waiting gpus to be ready when there are other
 processes using the requested gpus.
 """
+import sys
 import time
 
 import torch
@@ -61,16 +62,27 @@ def wait_gpus(gpus: dict, collect=True, pre_release=True, sync=True):
                 continue
             q = queries[gpu_id]
             if q.processes is not None and len(q.processes) > 0:
-                processes = [
-                    p for p in q.processes
-                    if p['gpu_memory_usage'] is not None
-                ]
-                processes = [
-                    p for p in processes
-                    if p['gpu_memory_usage'] > 0
-                ]
+                if sys.platform == 'win32':
+                    # on windows, GPU memory are managed by WDDM subsystems
+                    # nvidia-smi cannot get GPU memory usage of each process
+                    # so, all the detected python.exe will be considered
+                    processes = [
+                        p for p in q.processes
+                        if p['command'].lower() == 'python.exe'
+                    ]
+                else:
+                    processes = [
+                        p for p in q.processes
+                        if p['gpu_memory_usage'] is not None
+                    ]
+                    processes = [
+                        p for p in processes
+                        if p['gpu_memory_usage'] > 0
+                    ]
                 if len(processes) > 0:
-                    logger.info(f'GPU {gpu_id} is used, check again in 5 seconds')
+                    logger.info(
+                        f'GPU {gpu_id} is used, check again in 5 seconds'
+                    )
                     gpus_not_ready = True
                     break
             else:

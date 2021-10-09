@@ -76,7 +76,7 @@ class DataLoaderGenerator:
         raise NotImplementedError
 
     def build_dataloader(
-        self, dataset: Dataset, shuffle: bool, collate_fn=None
+        self, dataset: Dataset, shuffle: bool, collate_fn=None, **kwargs
     ) -> Tuple[DataLoader, Optional[DistributedSampler]]:
         """ This method builds the dataloader and the distributed sampler if
         `self.use_ddp` is True.
@@ -90,11 +90,18 @@ class DataLoaderGenerator:
         if self.use_ddp:
             sampler = DistributedSampler(dataset, shuffle=shuffle)
         shuffle = shuffle and sampler is None
-        dataloader = DataLoader(
-            dataset, self.batch_size, shuffle, sampler,
-            num_workers=self.num_workers, pin_memory=self.pin_memory,
-            drop_last=True, collate_fn=collate_fn
+        kw = dict(
+            dataset=dataset,
+            batch_size=self.batch_size,
+            shuffle=shuffle,
+            sampler=sampler,
+            num_workers=self.num_workers,
+            pin_memory=self.pin_memory,
+            drop_last=True,
+            collate_fn=collate_fn
         )
+        kw.update(kwargs)
+        dataloader = DataLoader(**kw)
         return dataloader, sampler
 
     @property

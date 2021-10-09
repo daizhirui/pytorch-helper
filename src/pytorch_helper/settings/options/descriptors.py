@@ -11,3 +11,5 @@ class AutoConvertDescriptor:
     def __set__(self, instance, value):
         if isinstance(value, dict):
             vars(instance)[self.name] = self.target_cls(value)
+        else:
+            vars(instance)[self.name] = value

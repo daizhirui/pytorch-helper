@@ -99,7 +99,11 @@ def load_task_option_yaml(path: str):
             os.path.dirname(path), base_task_option_file
         )
         base_task_dict = load_task_option_yaml(base_task_option_file)
-        task_dict = merge_task_dicts(base_task_dict, task_dict)
+        try:
+            task_dict = merge_task_dicts(base_task_dict, task_dict)
+        except AssertionError as e:
+            logger.error(f'When loading {path}, the following error occurs:')
+            raise e
     return task_dict
 
 
