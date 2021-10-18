@@ -393,6 +393,9 @@ class Task(LauncherTask, ABC):
 
     # ENTRY
 
+    class EarlyStop(Exception):
+        pass
+
     def run(self):
         """ the entry to launch the task, run the task until `self.epoch` is
         equal to `self.option.training_setting.epochs`, and save the final
@@ -403,15 +406,19 @@ class Task(LauncherTask, ABC):
         getattr(self, f'run_{self._option.task_mode.value}')()
 
     def run_train(self):
-        for epoch in range(self.epoch, self.option.train_setting.epochs):
-            if self.is_rank0 and self.tboard is not None:
-                lr = self.optimizer.param_groups[0]['lr']
-                self.tboard.add_scalar('learning-rate', lr, self.epoch)
-            # NOTE: different stage should not share the same set of keys
-            self.meter.reset_tags(self.in_stage_meter_keys)
-            self.one_epoch(epoch)
-        # save only the state dicts of model and loss_fn
-        self.save_pth('model_final', resumable=False)
+        try:
+            for epoch in range(self.epoch, self.option.train_setting.epochs):
+                if self.is_rank0 and self.tboard is not None:
+                    lr = self.learning_rate
+                    self.tboard.add_scalar('learning-rate', lr, self.epoch)
+                # NOTE: different stage should not share the same set of keys
+                self.meter.reset_tags(self.in_stage_meter_keys)
+                self.one_epoch(epoch)
+            # save only the state dicts of model and loss_fn
+            self.save_pth('model_final', resumable=False)
+        except self.EarlyStop as e:
+            self.backup(immediate=True, resumable=True)
+            self.save_pth('model_early_stop.pth', resumable=False)
 
     def run_test(self):
         self.cur_stage = self.STAGE.TEST
