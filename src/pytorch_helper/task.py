@@ -418,7 +418,7 @@ class Task(LauncherTask, ABC):
             self.save_pth('model_final', resumable=False)
         except self.EarlyStop as e:
             self.backup(immediate=True, resumable=True)
-            self.save_pth('model_early_stop.pth', resumable=False)
+            self.save_pth('model_early_stop', resumable=False)
 
     def run_test(self):
         self.cur_stage = self.STAGE.TEST
