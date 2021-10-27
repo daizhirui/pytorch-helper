@@ -112,7 +112,7 @@ class Task(LauncherTask, ABC):
             self.model = DataParallel(
                 module=self.model,
                 device_ids=self._option.cuda_ids,
-                output_device=self._option.cuda_ids[0]
+                # output_device=self._option.cuda_ids[0]
             )
             self.unwrapped_model = self.model.module
         else:
@@ -629,10 +629,11 @@ class Task(LauncherTask, ABC):
         also loads the data from CPU to GPU.
         """
         for batch in self.cur_dataloader:
-            # should return a dict of result to use
-            for k, v in batch.items():
-                # batch[k] = v.cuda(non_blocking=self.is_parallel)
-                batch[k] = v.cuda()
+            if self._option.distributed or len(self._option.cuda_ids) == 1:
+                # should return a dict of result to use
+                for k, v in batch.items():
+                    # batch[k] = v.cuda(non_blocking=self.is_parallel)
+                    batch[k] = v.cuda()
             batch_pack = Batch(gt=batch)
             yield batch_pack
 
