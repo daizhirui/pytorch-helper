@@ -629,11 +629,10 @@ class Task(LauncherTask, ABC):
         also loads the data from CPU to GPU.
         """
         for batch in self.cur_dataloader:
-            if self._option.distributed or len(self._option.cuda_ids) == 1:
-                # should return a dict of result to use
-                for k, v in batch.items():
-                    # batch[k] = v.cuda(non_blocking=self.is_parallel)
-                    batch[k] = v.cuda()
+            # should return a dict of result to use
+            for k, v in batch.items():
+                batch[k] = v.cuda(non_blocking=self._option.distributed)
+                # batch[k] = v.cuda()
             batch_pack = Batch(gt=batch)
             yield batch_pack
 
