@@ -104,6 +104,10 @@ def load_task_option_yaml(path: str):
         except AssertionError as e:
             logger.error(f'When loading {path}, the following error occurs:')
             raise e
+
+    for _ in range(3):
+        path = os.path.dirname(path)
+    task_dict['output_path'] = path
     return task_dict
 
 

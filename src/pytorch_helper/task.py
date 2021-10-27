@@ -417,6 +417,7 @@ class Task(LauncherTask, ABC):
             # save only the state dicts of model and loss_fn
             self.save_pth('model_final', resumable=False)
         except self.EarlyStop as e:
+            logger.warn('Early stop!')
             self.backup(immediate=True, resumable=True)
             self.save_pth('model_early_stop', resumable=False)
 

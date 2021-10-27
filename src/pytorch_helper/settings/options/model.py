@@ -32,10 +32,7 @@ class ModelOption(OptionBase):
                 raise IsADirectoryError(
                     f'pth path "{self.pth_path}" should not be a folder'
                 )
-            else:
-                raise FileNotFoundError(
-                    f'{self.pth_path} does not exist'
-                )
+
         return False
 
     def build(self):
