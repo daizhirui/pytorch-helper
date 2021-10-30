@@ -1,4 +1,5 @@
 import io
+import tempfile
 from typing import Any
 from typing import Union
 
@@ -9,6 +10,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 from . import config
 from .make_dirs import make_dirs_for_file
+from ..PyPDF4 import PdfFileReader
 from ..log import get_logger
 
 __all__ = [
@@ -22,12 +24,56 @@ __all__ = [
 logger = get_logger(__name__)
 
 
-def imread(path: str) -> np.ndarray:
+def imread(path: str) -> Union[list, np.ndarray]:
     """ read image from file `path`
 
     :param path: str of the file path
     :return: numpy array of the image
     """
+    if path.endswith('.pdf'):
+        file = open(path, 'rb')
+        pdf_file = PdfFileReader(file)
+        images = []
+        for n in range(pdf_file.numPages):
+            pdf_page = pdf_file.getPage(n)
+            if '/XObject' not in pdf_page['/Resources']:
+                logger.info('No objects')
+                continue
+            objects = pdf_page['/Resources']['/XObject'].getObject()
+            for obj in objects:
+                obj = objects[obj]
+                if obj['/Subtype'] == '/Image':
+                    size = (obj['/Width'], obj['/Height'])
+                    data = obj.getData()
+                    if obj['/ColorSpace'] == '/DeviceRGB':
+                        mode = 'RGB'
+                    else:
+                        mode = 'P'
+
+                    if obj['/Filter'] == '/FlateDecode':
+                        img = Image.frombuffer(mode, size, data)
+                    elif obj['/Filter'] == '/DCTDecode':
+                        img = tempfile.NamedTemporaryFile('wb', suffix='.jpg')
+                        img.write(data)
+                        img.close()
+                        img = Image.open(img.name)
+                    elif obj['/Filter'] == '/JPXDecode':
+                        img = tempfile.NamedTemporaryFile('wb', suffix='.jp2')
+                        img.write(data)
+                        img.close()
+                        img = Image.open(img.name)
+                    elif obj['/Filter'] == '/CCITTFaxDecode':
+                        img = tempfile.NamedTemporaryFile('wb', suffix='.tiff')
+                        img.write(data)
+                        img.close()
+                        img = Image.open(img.name)
+                    else:
+                        logger.warn(f'Unsupported Filter: {obj["/Filter"]}')
+                        continue
+                    images.append(np.array(img))
+        file.close()
+        return images
+
     return plt.imread(path)
 
 
